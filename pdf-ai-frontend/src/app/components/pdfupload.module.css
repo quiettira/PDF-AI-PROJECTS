@@ -1,0 +1,384 @@
+/* ========================================
+   PDF UPLOADER MODULE
+   ======================================== */
+
+/* Main Container */
+.container {
+  min-height: 100vh;
+  background-color: #ffffff;
+  padding: 3rem 1rem;
+  box-sizing: border-box;
+}
+
+.wrapper {
+  max-width: 700px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+/* ========================================
+   HEADER SECTION
+   ======================================== */
+
+.header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.iconBox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 4rem;
+  height: 4rem;
+  background-color: #3b82f6;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+  font-size: 2rem;
+}
+
+.title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: #1f2937;
+  margin: 0;
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.02em;
+  font-family: "Poppins", sans-serif;
+}
+
+.subtitle {
+  font-size: 1.125rem;
+  color: #6b7280;
+  margin: 0;
+  font-weight: 400;
+  line-height: 1.5;
+  font-family: "Poppins", sans-serif;
+}
+
+/* ========================================
+   FORM CARD
+   ======================================== */
+
+.card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 2.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-sizing: border-box;
+}
+
+/* ========================================
+   UPLOAD BOX
+   ======================================== */
+
+.uploadBox {
+  margin-bottom: 2rem;
+}
+
+.label {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 1rem;
+  letter-spacing: 0.01em;
+  font-family: "Poppins", sans-serif;
+}
+
+.dropZone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 2.5rem 1.5rem;
+  border: 2px dashed #d1d5db;
+  border-radius: 0.5rem;
+  background-color: #f9fafb;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.dropZone:hover {
+  border-color: #3b82f6;
+  background-color: #eff6ff;
+}
+
+.dropZoneContent {
+  text-align: center;
+  pointer-events: none;
+}
+
+.uploadIcon {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+  display: block;
+}
+
+.dropZoneText {
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+  font-family: "Poppins", sans-serif;
+}
+
+.dropZoneHint {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  margin: 0;
+}
+
+/* ========================================
+   FILE INFO
+   ======================================== */
+
+.fileInfo {
+  margin-top: 1rem;
+  padding: 1rem;
+  background-color: #dbeafe;
+  border: 1px solid #93c5fd;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  box-sizing: border-box;
+}
+
+.fileIcon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.fileName {
+  color: #1e40af;
+  font-weight: 500;
+  font-size: 0.9rem;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.clearButton {
+  padding: 0.375rem 0.75rem;
+  background-color: #fee2e2;
+  color: #7f1d1d;
+  border: none;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.clearButton:hover {
+  background-color: #fecaca;
+  color: #4b0000;
+}
+
+/* ========================================
+   SUBMIT BUTTON
+   ======================================== */
+
+.submitButton {
+  width: 100%;
+  padding: 1rem 1.5rem;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+  font-family: "Poppins", sans-serif;
+}
+
+.submitButton:hover:not(:disabled) {
+  background-color: #2563eb;
+}
+
+.submitButton:disabled {
+  background-color: #d1d5db;
+  cursor: not-allowed;
+  opacity: 1;
+}
+
+/* ========================================
+   ERROR MESSAGE
+   ======================================== */
+
+.error {
+  padding: 1rem;
+  background-color: #fee2e2;
+  border: 1px solid #fecaca;
+  border-radius: 0.5rem;
+  color: #7f1d1d;
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+  box-sizing: border-box;
+}
+
+.errorTitle {
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+/* ========================================
+   SUMMARY CARD
+   ======================================== */
+
+.summaryCard {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 2.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  box-sizing: border-box;
+}
+
+.summaryHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.summaryIcon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.summaryTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0;
+  font-family: "Poppins", sans-serif;
+}
+
+.summaryContent {
+  color: #374151;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+/* ========================================
+   LOADING SPINNER
+   ======================================== */
+
+.loadingSpinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
+
+@media (max-width: 768px) {
+  .container {
+    padding: 2rem 1rem;
+  }
+
+  .wrapper {
+    max-width: 100%;
+  }
+
+  .header {
+    margin-bottom: 2rem;
+  }
+
+  .title {
+    font-size: 2rem;
+  }
+
+  .subtitle {
+    font-size: 1rem;
+  }
+
+  .card,
+  .summaryCard {
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+  }
+
+  .uploadBox {
+    margin-bottom: 1.5rem;
+  }
+
+  .dropZone {
+    padding: 2rem 1rem;
+  }
+
+  .uploadIcon {
+    font-size: 2rem;
+  }
+
+  .iconBox {
+    width: 3.5rem;
+    height: 3.5rem;
+    font-size: 1.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 1.5rem 1rem;
+  }
+
+  .header {
+    margin-bottom: 1.5rem;
+  }
+
+  .title {
+    font-size: 1.75rem;
+  }
+
+  .subtitle {
+    font-size: 0.9rem;
+  }
+
+  .card,
+  .summaryCard {
+    padding: 1rem;
+  }
+
+  .uploadIcon {
+    font-size: 2rem;
+  }
+
+  .summaryTitle {
+    font-size: 1.25rem;
+  }
+
+  .submitButton {
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+  }
+}
+
