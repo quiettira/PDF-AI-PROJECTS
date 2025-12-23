@@ -1,0 +1,145 @@
+# =============================================
+# ENVIRONMENT VARIABLES - JANGAN PUSH KE GIT
+# =============================================
+.env
+.env.local
+.env.*.local
+.env.*.private
+
+# =============================================
+# PYTHON - Backend
+# =============================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+.venv
+*.venv
+
+# PyCharm
+.idea/
+*.iml
+*.xml
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# =============================================
+# NODE.JS - Frontend
+# =============================================
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+package-lock.json
+yarn.lock
+
+# Next.js
+.next/
+out/
+.vercel/
+.turbo
+dist/
+
+# =============================================
+# IDEs & EDITORS
+# =============================================
+.vscode/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+.DS_Store
+*.swp
+*.swo
+*~
+.sublime-project
+.sublime-workspace
+
+# VS Code
+.history/
+
+# =============================================
+# OS FILES
+# =============================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# =============================================
+# LOGS
+# =============================================
+*.log
+*.logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# =============================================
+# TEMP FILES
+# =============================================
+*.tmp
+*.temp
+.cache/
+temp/
+tmp/
+
+# =============================================
+# BUILD OUTPUT
+# =============================================
+.next
+out/
+build/
+dist/
+public/
+.build/
+
+# =============================================
+# SYSTEM
+# =============================================
+.env.production.local
+.vscode
+.vscode-test
+*.vsix
