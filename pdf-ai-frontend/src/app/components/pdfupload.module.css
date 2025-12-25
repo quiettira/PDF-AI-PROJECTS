@@ -1,151 +1,141 @@
-/* ========================================
-   PDF UPLOADER MODULE
-   ======================================== */
-
-/* Main Container */
 .container {
   min-height: 100vh;
   background-color: #ffffff;
-  padding: 3rem 1rem;
-  box-sizing: border-box;
+  padding: 2rem 1rem;
 }
 
 .wrapper {
-  max-width: 700px;
+  max-width: 1400px;
   margin: 0 auto;
-  box-sizing: border-box;
 }
-
-/* ========================================
-   HEADER SECTION
-   ======================================== */
 
 .header {
+  margin-bottom: 2.5rem;
   text-align: center;
-  margin-bottom: 3rem;
-}
-
-.iconBox {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 4rem;
-  height: 4rem;
-  background-color: #3b82f6;
-  border-radius: 0.5rem;
-  margin-bottom: 1.5rem;
-  font-size: 2rem;
 }
 
 .title {
   font-size: 2.5rem;
   font-weight: 800;
-  color: #1f2937;
-  margin: 0;
-  margin-bottom: 0.75rem;
-  letter-spacing: -0.02em;
+  color: #8b0000 ;
+  margin: 0 0 0.75rem 0;
   font-family: "Poppins", sans-serif;
+  letter-spacing: -0.02em;
 }
 
 .subtitle {
-  font-size: 1.125rem;
-  color: #6b7280;
+  font-size: 1rem;
+  color: #272525;
   margin: 0;
   font-weight: 400;
-  line-height: 1.5;
   font-family: "Poppins", sans-serif;
 }
 
-/* ========================================
-   FORM CARD
-   ======================================== */
-
-.card {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
-  padding: 2.5rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  box-sizing: border-box;
+.contentWrapper {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  margin-top: 2rem;
 }
 
-/* ========================================
-   UPLOAD BOX
-   ======================================== */
-
-.uploadBox {
-  margin-bottom: 2rem;
-}
-
-.label {
-  display: block;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 1rem;
-  letter-spacing: 0.01em;
-  font-family: "Poppins", sans-serif;
-}
-
-.dropZone {
+.leftPanel,
+.rightPanel {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  padding: 2.5rem 1.5rem;
-  border: 2px dashed #d1d5db;
-  border-radius: 0.5rem;
-  background-color: #f9fafb;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-sizing: border-box;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
-.dropZone:hover {
-  border-color: #3b82f6;
-  background-color: #eff6ff;
+.leftPanel {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
 
-.dropZoneContent {
-  text-align: center;
-  pointer-events: none;
-}
-
-.uploadIcon {
-  font-size: 2.5rem;
-  margin-bottom: 0.75rem;
-  display: block;
-}
-
-.dropZoneText {
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: #1f2937;
-  margin-bottom: 0.5rem;
-  font-family: "Poppins", sans-serif;
-}
-
-.dropZoneHint {
-  font-size: 0.8rem;
-  color: #9ca3af;
-  margin: 0;
-}
-
-/* ========================================
-   FILE INFO
-   ======================================== */
-
-.fileInfo {
-  margin-top: 1rem;
-  padding: 1rem;
-  background-color: #dbeafe;
-  border: 1px solid #93c5fd;
-  border-radius: 0.5rem;
+.panelTitle {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  box-sizing: border-box;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #000000;
+  margin: 0 0 1.5rem 0;
+  font-family: "Poppins", sans-serif;
+  letter-spacing: -0.01em;
+}
+
+.panelTitleIcon {
+  font-size: 1.5rem;
+}
+
+.uploadArea {
+  margin-bottom: 1.5rem;
+}
+
+.uploadZone {
+  border: 2px dashed #8b0000;
+  border-radius: 10px;
+  padding: 3rem 2rem;
+  text-align: center;
+  background-color: rgba(139, 0, 0, 0.05);
+  margin-bottom: 1rem;
+  transition: all 0.25s ease;
+}
+
+.uploadZone:hover {
+  border-color: #a52a2a;
+  background-color: rgba(139, 0, 0, 0.1);
+}
+
+.uploadButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.75rem;
+  background-color: #8b0000;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  font-family: "Poppins", sans-serif;
+  box-shadow: 0 2px 8px rgba(139, 0, 0, 0.2);
+}
+
+.uploadButton:hover {
+  background-color: #a52a2a;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(139, 0, 0, 0.3);
+}
+
+.uploadButtonIcon {
+  font-size: 1.1rem;
+}
+
+.fileInput {
+  display: none;
+}
+
+.uploadHint {
+  font-size: 0.9375rem;
+  color: #8b0000;
+  margin: 0.75rem 0 0 0;
+  font-family: "Poppins", sans-serif;
+  opacity: 0.8;
+  font-weight: 400;
+}
+
+.fileInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background-color: rgba(139, 0, 0, 0.1);
+  border: 1px solid #8b0000;
+  border-radius: 8px;
+  margin-top: 1rem;
 }
 
 .fileIcon {
@@ -154,137 +144,225 @@
 }
 
 .fileName {
-  color: #1e40af;
-  font-weight: 500;
-  font-size: 0.9rem;
   flex: 1;
+  color: #000000;
+  font-size: 1rem;
+  font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-family: "Poppins", sans-serif;
 }
 
 .clearButton {
-  padding: 0.375rem 0.75rem;
-  background-color: #fee2e2;
-  color: #7f1d1d;
+  padding: 0.25rem 0.5rem;
+  background: transparent;
+  color: #8b0000;
   border: none;
-  border-radius: 0.375rem;
-  font-size: 0.75rem;
-  font-weight: 600;
+  border-radius: 4px;
   cursor: pointer;
-  flex-shrink: 0;
+  font-size: 1.1rem;
   transition: all 0.2s ease;
+  flex-shrink: 0;
 }
 
 .clearButton:hover {
-  background-color: #fecaca;
-  color: #4b0000;
+  background-color: rgba(139, 0, 0, 0.1);
+  color: #a52a2a;
 }
 
-/* ========================================
-   SUBMIT BUTTON
-   ======================================== */
+.textArea {
+  width: 100%;
+  min-height: 400px;
+  padding: 1.25rem;
+  background-color: #ffffff;
+  border: 1px solid #8b0000;
+  border-radius: 10px;
+  color: #000000;
+  font-size: 1rem;
+  line-height: 1.7;
+  font-family: "Poppins", sans-serif;
+  resize: vertical;
+  box-sizing: border-box;
+  transition: all 0.25s ease;
+  font-weight: 400;
+}
+
+.textArea:focus {
+  outline: none;
+  border-color: #a52a2a;
+  box-shadow: 0 0 0 3px rgba(139, 0, 0, 0.15);
+}
+
+.textArea:disabled {
+  background-color: #f7f7f7;
+  border-color: #d0d0d0;
+  color: #a52a2a;
+  cursor: not-allowed;
+}
+
+.textArea::placeholder {
+  color: #8b0000;
+  opacity: 0.5;
+}
+
+.styleSelector {
+  margin: 1.5rem 0;
+  padding-top: 1.5rem;
+  border-top: 1px solid #8b0000;
+  opacity: 0.9;
+}
+
+.styleLabel {
+  display: block;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #000000;
+  margin-bottom: 0.75rem;
+  font-family: "Poppins", sans-serif;
+}
+
+.styleOptions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+}
+
+.styleOption {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.875rem 0.5rem;
+  border: 1px solid #8b0000;
+  border-radius: 10px;
+  background-color: #ffffff;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: center;
+  min-height: 80px;
+}
+
+.styleOption:hover {
+  border-color: #a52a2a;
+  background-color: rgba(139, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.styleOptionActive {
+  border-color: #8b0000;
+  background-color: rgba(139, 0, 0, 0.15);
+  box-shadow: 0 0 0 2px rgba(139, 0, 0, 0.3);
+}
+
+.styleIcon {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.styleLabelText {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #000000;
+  font-family: "Poppins", sans-serif;
+}
 
 .submitButton {
   width: 100%;
   padding: 1rem 1.5rem;
-  background-color: #3b82f6;
+  background-color: #8b0000;
   color: white;
   border: none;
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  font-weight: 600;
+  border-radius: 10px;
+  font-size: 1.0625rem;
+  font-weight: 700;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  transition: all 0.2s ease;
-  box-sizing: border-box;
+  gap: 0.75rem;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   font-family: "Poppins", sans-serif;
+  margin-top: 1rem;
+  box-shadow: 0 2px 8px rgba(139, 0, 0, 0.2);
 }
 
 .submitButton:hover:not(:disabled) {
-  background-color: #2563eb;
+  background-color: #a52a2a;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(139, 0, 0, 0.3);
 }
 
 .submitButton:disabled {
-  background-color: #d1d5db;
+  background-color: #cccccc;
   cursor: not-allowed;
-  opacity: 1;
+  opacity: 0.6;
 }
 
-/* ========================================
-   ERROR MESSAGE
-   ======================================== */
-
-.error {
-  padding: 1rem;
-  background-color: #fee2e2;
-  border: 1px solid #fecaca;
-  border-radius: 0.5rem;
-  color: #7f1d1d;
-  font-size: 0.9rem;
-  margin-bottom: 1.5rem;
-  line-height: 1.5;
-  box-sizing: border-box;
+.submitButtonIcon {
+  font-size: 1.1rem;
 }
 
-.errorTitle {
-  font-weight: 700;
-  margin-bottom: 0.5rem;
+.rightPanel {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
 
-/* ========================================
-   SUMMARY CARD
-   ======================================== */
-
-.summaryCard {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
-  padding: 2.5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  box-sizing: border-box;
+.resultContainer {
+  position: relative;
 }
 
-.summaryHeader {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-
-.summaryIcon {
-  font-size: 1.5rem;
-  flex-shrink: 0;
-}
-
-.summaryTitle {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #1f2937;
-  margin: 0;
-  font-family: "Poppins", sans-serif;
-}
-
-.summaryContent {
-  color: #374151;
-  font-size: 0.95rem;
+.resultTextArea {
+  width: 100%;
+  min-height: 400px;
+  padding: 1.25rem;
+  background-color: #ffffff;
+  border: 1px solid #8b0000;
+  border-radius: 10px;
+  color: #000000;
+  font-size: 1rem;
   line-height: 1.7;
-  white-space: pre-wrap;
-  word-wrap: break-word;
+  font-family: "Poppins", sans-serif;
+  resize: none;
+  box-sizing: border-box;
+  overflow-y: auto;
+  transition: all 0.25s ease;
+  font-weight: 400;
 }
 
-/* ========================================
-   LOADING SPINNER
-   ======================================== */
+.resultTextArea:focus {
+  outline: none;
+  border-color: #a52a2a;
+  box-shadow: 0 0 0 3px rgba(139, 0, 0, 0.15);
+}
+
+.copyButton {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  padding: 0.5rem;
+  background-color: rgba(139, 0, 0, 0.1);
+  border: 1px solid #8b0000;
+  border-radius: 8px;
+  color: #8b0000;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 1rem;
+}
+
+.copyButton:hover {
+  background-color: rgba(139, 0, 0, 0.2);
+  border-color: #a52a2a;
+  transform: scale(1.05);
+}
 
 .loadingSpinner {
   display: inline-block;
   width: 1rem;
   height: 1rem;
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.2);
   border-top-color: white;
   border-radius: 50%;
   animation: spin 0.6s linear infinite;
@@ -296,89 +374,158 @@
   }
 }
 
-/* ========================================
-   RESPONSIVE DESIGN
-   ======================================== */
+.error {
+  padding: 1rem 1.25rem;
+  background-color: rgba(139, 0, 0, 0.1);
+  border: 1px solid #8b0000;
+  border-radius: 10px;
+  color: #8b0000;
+  font-size: 1rem;
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+  font-family: "Poppins", sans-serif;
+  font-weight: 400;
+}
 
-@media (max-width: 768px) {
-  .container {
-    padding: 2rem 1rem;
+.errorTitle {
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #8b0000;
+  font-family: "Poppins", sans-serif;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  text-align: center;
+  color: #8b0000;
+  opacity: 0.6;
+}
+
+.emptyStateIcon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.emptyStateText {
+  font-size: 1rem;
+  color: #8b0000;
+  margin: 0;
+  opacity: 0.7;
+  font-family: "Poppins", sans-serif;
+  font-weight: 400;
+}
+
+.resultTextArea::-webkit-scrollbar,
+.textArea::-webkit-scrollbar {
+  width: 8px;
+}
+
+.resultTextArea::-webkit-scrollbar-track,
+.textArea::-webkit-scrollbar-track {
+  background: #ffffff;
+  border-radius: 4px;
+}
+
+.resultTextArea::-webkit-scrollbar-thumb,
+.textArea::-webkit-scrollbar-thumb {
+  background: #8b0000;
+  border-radius: 4px;
+  opacity: 0.5;
+}
+
+.resultTextArea::-webkit-scrollbar-thumb:hover,
+.textArea::-webkit-scrollbar-thumb:hover {
+  background: #a52a2a;
+  opacity: 1;
+}
+
+@media (max-width: 968px) {
+  .contentWrapper {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
   }
 
-  .wrapper {
-    max-width: 100%;
-  }
-
-  .header {
-    margin-bottom: 2rem;
-  }
-
-  .title {
-    font-size: 2rem;
-  }
-
-  .subtitle {
-    font-size: 1rem;
-  }
-
-  .card,
-  .summaryCard {
+  .leftPanel,
+  .rightPanel {
     padding: 1.5rem;
-    border-radius: 0.5rem;
   }
 
-  .uploadBox {
-    margin-bottom: 1.5rem;
+  .textArea,
+  .resultTextArea {
+    min-height: 300px;
   }
 
-  .dropZone {
-    padding: 2rem 1rem;
+  .styleOptions {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
   }
 
-  .uploadIcon {
-    font-size: 2rem;
-  }
-
-  .iconBox {
-    width: 3.5rem;
-    height: 3.5rem;
-    font-size: 1.75rem;
+  .styleOption {
+    min-height: 70px;
+    padding: 0.75rem 0.5rem;
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 640px) {
   .container {
     padding: 1.5rem 1rem;
   }
 
-  .header {
-    margin-bottom: 1.5rem;
-  }
-
   .title {
-    font-size: 1.75rem;
+    font-size: 2rem;
   }
 
   .subtitle {
     font-size: 0.9rem;
   }
 
-  .card,
-  .summaryCard {
+  .leftPanel,
+  .rightPanel {
+    padding: 1.25rem;
+  }
+
+  .panelTitle {
+    font-size: 1.1rem;
+  }
+
+  .textArea,
+  .resultTextArea {
+    min-height: 250px;
+    font-size: 0.9rem;
     padding: 1rem;
   }
 
-  .uploadIcon {
-    font-size: 2rem;
-  }
-
-  .summaryTitle {
-    font-size: 1.25rem;
+  .uploadButton {
+    padding: 0.65rem 1.25rem;
+    font-size: 0.9rem;
   }
 
   .submitButton {
-    padding: 0.75rem 1rem;
+    padding: 0.875rem 1.25rem;
     font-size: 0.95rem;
   }
-}
 
+  .styleOptions {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+
+  .styleOption {
+    min-height: 65px;
+    padding: 0.65rem 0.4rem;
+  }
+
+  .styleIcon {
+    font-size: 1.25rem;
+    margin-bottom: 0.35rem;
+  }
+
+  .styleLabelText {
+    font-size: 0.7rem;
+  }
+}

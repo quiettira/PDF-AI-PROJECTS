@@ -1,7 +1,7 @@
 import os
 import io
 from fastapi import FastAPI, UploadFile, File, HTTPException
-from fastapi.middleware.cors import CORSMiddleware   # ✅ TAMBAH INI
+from fastapi.middleware.cors import CORSMiddleware   
 from PyPDF2 import PdfReader
 from dotenv import load_dotenv
 from langdetect import detect, DetectorFactory
@@ -29,7 +29,6 @@ app.add_middleware(
 # Detect API Keys
 # =========================
 gemini_api_key = os.getenv("GEMINI_API_KEY")
-openai_api_key = os.getenv("OPENAI_API_KEY")
 
 # =========================
 # Determine Provider
@@ -77,7 +76,7 @@ def detect_language(text: str):
     Returns: 'id' untuk Indonesian, 'en' untuk English, dll
     """
     try:
-        # Ambil sample dari teks (hindari teks yang terlalu panjang)
+        # Ambil sample dari teks 
         sample = text[:1000]
         detected_lang = detect(sample)
         return detected_lang
@@ -86,26 +85,57 @@ def detect_language(text: str):
         return "en"
 
 # =========================
-# Get Prompt by Language
+# Get Prompt by Language and Style
 # =========================
-def get_summarize_prompt(text: str, language: str):
+def get_summarize_prompt(text: str, language: str, style: str = "standard"):
     """
-    Buat prompt yang sesuai dengan bahasa yang terdeteksi
+    Buat prompt yang sesuai dengan bahasa dan gaya ringkasan yang dipilih
+    
+    Styles:
+    - standard: Ringkasan paragraf normal
+    - executive: Ringkasan untuk eksekutif (fokus pada hasil, impact)
+    - bullets: Format poin-poin (bullet points)
+    - detailed: Ringkasan detail dengan penjelasan mendalam
     """
-    if language == "id":  # Indonesian
+    
+    style_instructions = {
+        "standard": {
+            "id": "Ringkasan harus jelas, singkat, dan terstruktur dalam paragraf-paragraf.\nSorot ide-ide kunci dan jelaskan poin-poin penting.",
+            "en": "The summary should be clear, concise, and well-structured in paragraphs.\nHighlight key ideas and explain important points."
+        },
+        "executive": {
+            "id": "Buatkan ringkasan eksekutif yang fokus pada:\n- Apa masalahnya?\n- Solusi/rekomendasi utama\n- Impact atau hasil yang diharapkan\n\nGunakan bahasa yang ringkas dan actionable, cocok untuk decision makers.",
+            "en": "Create an executive summary focusing on:\n- What is the main issue?\n- Key solutions/recommendations\n- Expected impact or results\n\nUse concise, actionable language suitable for decision makers."
+        },
+        "bullets": {
+            "id": "Format ringkasan sebagai poin-poin (bullet points) yang mudah dicerna:\n- Setiap poin maksimal 1-2 baris\n- Gunakan bullet (•) atau nomor untuk setiap poin\n- Kelompokkan poin-poin yang related dengan subheading jika perlu",
+            "en": "Format the summary as bullet points that are easy to digest:\n- Each point should be 1-2 lines maximum\n- Use bullets (•) or numbers for each point\n- Group related points with subheadings if needed"
+        },
+        "detailed": {
+            "id": "Buatkan ringkasan detail yang mencakup:\n- Latar belakang/konteks\n- Poin-poin utama dengan penjelasan mendalam\n- Nuansa dan detail penting\n- Kesimpulan dan implikasi\n\nBisa lebih panjang untuk menangkap informasi yang lebih komprehensif.",
+            "en": "Create a detailed summary that includes:\n- Background/context\n- Main points with deep explanation\n- Important nuances and details\n- Conclusions and implications\n\nCan be longer to capture more comprehensive information."
+        }
+    }
+    
+    lang = "id" if language == "id" else "en"
+    instruction = style_instructions.get(style, style_instructions["standard"])[lang]
+    
+    if lang == "id":
         prompt = f"""
 Buatkan ringkasan dari dokumen berikut dalam bahasa Indonesia.
-Ringkasan harus jelas, singkat, dan terstruktur dalam paragraf-paragraf.
-Sorot ide-ide kunci dan jelaskan poin-poin penting.
+
+Instruksi format:
+{instruction}
 
 Dokumen:
 {text[:5000]}
 """
-    else:  # English (default)
+    else:
         prompt = f"""
 Please summarize the following document in English.
-The summary should be clear, concise, and well-structured in paragraphs.
-Highlight key ideas and explain important points.
+
+Format instructions:
+{instruction}
 
 Document:
 {text[:5000]}
@@ -116,8 +146,8 @@ Document:
 # =========================
 # Summarize Logic
 # =========================
-def summarize_with_gemini(text: str, language: str):
-    prompt = get_summarize_prompt(text, language)
+def summarize_with_gemini(text: str, language: str, style: str = "standard"):
+    prompt = get_summarize_prompt(text, language, style)
 
     response = client.models.generate_content(
         model="gemini-2.5-flash",   
@@ -126,32 +156,62 @@ def summarize_with_gemini(text: str, language: str):
 
     return response.text
 
-def summarize_mock(text: str, language: str):
+def summarize_mock(text: str, language: str, style: str = "standard"):
     lang_label = "Bahasa Indonesia" if language == "id" else "English"
-    return f"[{lang_label}] {text[:300]} ... (mock summary)"
+    style_label = f" ({style})" if style != "standard" else ""
+    return f"[{lang_label}{style_label}] {text[:300]} ... (mock summary)"
 
 # =========================
-# API Endpoint
+# API Endpoints
 # =========================
-# =========================
-# API Endpoint
-# =========================
-@app.post("/summarize")
-async def summarize_pdf(file: UploadFile = File(...)):
+
+@app.post("/preview")
+async def preview_pdf(file: UploadFile = File(...)):
+    """Extract and return PDF text content for preview"""
     text = extract_text_from_pdf(file)
     
     # Deteksi bahasa dari teks PDF
     detected_language = detect_language(text)
+    
+    # Limit preview text to first 2000 characters
+    preview_text = text[:2000]
+    
+    return {
+        "detected_language": detected_language,
+        "preview_text": preview_text,
+        "total_length": len(text),
+        "preview_length": len(preview_text),
+        "is_truncated": len(text) > 2000
+    }
+
+@app.post("/summarize")
+async def summarize_pdf(file: UploadFile = File(...), style: str = "standard"):
+    """
+    Summarize PDF with selected style.
+    
+    Query parameter:
+    - style: standard, executive, bullets, or detailed (default: standard)
+    """
+    text = extract_text_from_pdf(file)
+    
+    # Deteksi bahasa dari teks PDF
+    detected_language = detect_language(text)
+    
+    # Validasi style
+    valid_styles = ["standard", "executive", "bullets", "detailed"]
+    if style not in valid_styles:
+        style = "standard"
 
     try:
         if AI_PROVIDER == "gemini":
-            summary = summarize_with_gemini(text, detected_language)
+            summary = summarize_with_gemini(text, detected_language, style)
         else:
-            summary = summarize_mock(text, detected_language)
+            summary = summarize_mock(text, detected_language, style)
 
         return {
             "provider": AI_PROVIDER,
             "detected_language": detected_language,
+            "style": style,
             "summary": summary
         }
 
