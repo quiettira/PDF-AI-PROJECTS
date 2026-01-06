@@ -1,9 +1,19 @@
 "use client";
-import { useState } from "react";
-import Navbar from "./Navbar";
+import { useState, useEffect } from "react";
 import styles from "./pdfupload.module.css";
 
-const API_BASE_URL = "http://127.0.0.1:8000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_PY_API_BASE_URL || "http://localhost:8000"; // Python AI service
+const GO_API_BASE_URL = process.env.NEXT_PUBLIC_GO_API_BASE_URL || "http://localhost:8080"; // Go backend
+
+// Check if backend is available
+const checkBackendHealth = async () => {
+  try {
+    const response = await fetch(`${GO_API_BASE_URL}/pdfs`, { method: 'GET' });
+    return response.ok;
+  } catch {
+    return false;
+  }
+};
 
 const SUMMARY_STYLES = [
   { value: "standard", label: "Standard", icon: "📄", iconClass: "emoji emoji-document", description: "Ringkasan paragraf normal" },
@@ -13,17 +23,58 @@ const SUMMARY_STYLES = [
 ];
 
 export default function PdfUploader() {
-  const [file, setFile] = useState(null); //menyimpan file PDF yang diunggah
-  const [textInput, setTextInput] = useState(""); // menyimpan teks pratinjau dari file PDF
-  const [summary, setSummary] = useState(""); // menyimpan hasil ringkasan
-  const [summaryStyle, setSummaryStyle] = useState("standard"); //menyimpan gaya ringkasan yang dipilih
-  const [loading, setLoading] = useState(false); //menyimpan status loading
-  const [error, setError] = useState(""); //menyimpan pesan error
+  const [file, setFile] = useState(null);
+  const [textInput, setTextInput] = useState("");
+  const [summary, setSummary] = useState("");
+  const [summaryStyle, setSummaryStyle] = useState("standard");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [useGoBackend, setUseGoBackend] = useState(true); // Default to Go backend
+  const [backendStatus, setBackendStatus] = useState({ go: false, python: false });
+
+  // Check backend health on component mount
+  useEffect(() => {
+    const checkHealth = async () => {
+      try {
+        const goResponse = await fetch(`${GO_API_BASE_URL}/health`);
+        const pythonResponse = await fetch(`${API_BASE_URL}/health`);
+        
+        setBackendStatus({
+          go: goResponse.ok,
+          python: pythonResponse.ok
+        });
+      } catch (err) {
+        console.log("Backend health check failed:", err);
+        setBackendStatus({
+          go: false,
+          python: false
+        });
+      }
+    };
+    
+    // Check immediately
+    checkHealth();
+    
+    // Check every 10 seconds
+    const interval = setInterval(checkHealth, 10000);
+    
+    // Cleanup interval on unmount
+    return () => clearInterval(interval);
+  }, []);
 
   // Error handling yang ramah ke user
   const parseError = (err) => {
     if (err.message?.includes("Failed to fetch")) {
-      return `Gagal terhubung ke backend (${API_BASE_URL})`;
+      return `❌ Gagal terhubung ke backend. Pastikan:
+      
+🔧 Go Backend (${GO_API_BASE_URL}) sedang berjalan
+🐍 Python Service (${API_BASE_URL}) sedang berjalan
+🗄️ PostgreSQL database tersedia
+
+Jalankan: start-all.bat untuk memulai semua service`;
+    }
+    if (err.message?.includes("NetworkError")) {
+      return "❌ Masalah jaringan. Periksa koneksi internet atau service backend.";
     }
     return err.message;
   };
@@ -71,6 +122,21 @@ export default function PdfUploader() {
       return;
     }
 
+    // Validate file size (10MB limit)
+    const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+    if (selectedFile.size > maxSize) {
+      setError(`❌ File terlalu besar! Maksimal 10MB. File Anda: ${(selectedFile.size / 1024 / 1024).toFixed(2)}MB`);
+      setFile(null);
+      return;
+    }
+
+    // Validate file type
+    if (!selectedFile.name.toLowerCase().endsWith('.pdf')) {
+      setError("❌ Hanya file PDF yang diizinkan!");
+      setFile(null);
+      return;
+    }
+
     setLoading(true);
     try {
       const data = await fetchAPI("/preview", selectedFile);
@@ -90,20 +156,42 @@ export default function PdfUploader() {
     setTextInput(e.target.value);
   };
 
-  const handleSubmit = async () => { //dipanggil kalau klik tombol ringkas lalu akan di ringkas
+  const handleSubmit = async () => {
     if (!file) {
-      setError("Unggah PDF terlebih dahulu."); //nyegah error sebelum request
+      setError("Unggah PDF terlebih dahulu.");
       return;
     }
 
-    setLoading(true); 
-    setSummary(""); 
+    setLoading(true);
+    setSummary("");
     setError("");
 
-    //mengirim request ke backend untuk ringkasan
     try {
-      const data = await fetchAPI("/summarize", file, { style: summaryStyle });
-      setSummary(data.summary || "");
+      if (useGoBackend) {
+        // Use Go backend (upload + summarize in one call)
+        const formData = new FormData();
+        formData.append("file", file);
+        
+        const response = await fetch(
+          `${GO_API_BASE_URL}/upload?style=${encodeURIComponent(summaryStyle)}`,
+          {
+          method: "POST",
+          body: formData,
+          }
+        );
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || "Upload failed");
+        }
+        
+        const data = await response.json();
+        setSummary(data.summary || "");
+      } else {
+        // Use Python backend (original flow)
+        const data = await fetchAPI("/summarize", file, { style: summaryStyle });
+        setSummary(data.summary || "");
+      }
     } catch (err) {
       setError(parseError(err));
     } finally {
@@ -118,6 +206,86 @@ export default function PdfUploader() {
     }
   };
 
+ const handleExportTxt = async () => {
+  if (!summary) return;
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/export/txt`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        summary: summary, // ✅ HARUS OBJEK
+      }),
+    });
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "summary.txt";
+    a.click();
+
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    setError("Gagal export TXT");
+  }
+};
+
+  const handleExportPdf = async () => {
+    if (!summary) return;
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/export/pdf`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          summary: summary,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to export PDF");
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "summary.pdf";
+      a.click();
+
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError("Gagal export PDF: " + err.message);
+    }
+  };
+
+  // Helper function to render highlights
+  const renderSummary = (text) => {
+    if (!text) return null;
+    
+    // Split text by **highlight** pattern
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+    
+    return parts.map((part, index) => {
+      if (part.startsWith('**') && part.endsWith('**')) {
+        // Remove asterisks and wrap in highlight span
+        return (
+          <span key={index} className={styles.highlight}>
+            {part.slice(2, -2)}
+          </span>
+        );
+      }
+      return part;
+    });
+  };
+
   return (
     <div className={styles.container}>
       <div className={styles.wrapper}>
@@ -127,6 +295,22 @@ export default function PdfUploader() {
           <p className={styles.subtitle}>
             Unggah dokumen PDF untuk mendapatkan ringkasan yang kalian butuhkan.
           </p>
+          
+          {/* Backend Status */}
+          <div style={{ 
+            display: "flex", 
+            gap: "1rem", 
+            marginTop: "1rem", 
+            fontSize: "0.85rem",
+            justifyContent: "center"
+          }}>
+            <span style={{ color: backendStatus.go ? "green" : "red" }}>
+              {backendStatus.go ? "✅" : "❌"} Go Backend
+            </span>
+            <span style={{ color: backendStatus.python ? "green" : "red" }}>
+              {backendStatus.python ? "✅" : "❌"} Python AI
+            </span>
+          </div>
         </div>
 
         {/* Error Message */}
@@ -166,7 +350,12 @@ export default function PdfUploader() {
               {file && ( 
                 <div className={styles.fileInfo}>
                   <span className={`${styles.fileIcon} emoji emoji-document`}>📄</span>
-                  <span className={styles.fileName}>{file.name}</span>
+                  <div style={{ flex: 1 }}>
+                    <div className={styles.fileName}>{file.name}</div>
+                    <div style={{ fontSize: "0.8rem", color: "#666" }}>
+                      Size: {(file.size / 1024 / 1024).toFixed(2)}MB / 10MB
+                    </div>
+                  </div>
                   <button
                     type="button"
                     onClick={() => handleFileSelect(null)} //menghapus file yang diunggah
@@ -187,6 +376,23 @@ export default function PdfUploader() {
               onChange={handleTextChange}
               disabled={!file} //jika tidak ada file yang diunggah maka textarea tidak bisa diubah
             />
+
+            {/* Backend Selection */}
+            <div className={styles.backendSelector}>
+              <label className={styles.backendLabel}>
+                <input
+                  type="checkbox"
+                  checked={useGoBackend}
+                  onChange={(e) => setUseGoBackend(e.target.checked)}
+                />
+                <span>🚀 Use Go Backend (Save to Database)</span>
+              </label>
+              <p className={styles.backendHint}>
+                {useGoBackend 
+                  ? "PDF akan disimpan ke database dan bisa dikelola di PDF Manager" 
+                  : "Hanya summarize tanpa menyimpan ke database"}
+              </p>
+            </div>
 
             {/* Style Selector */}
             {(file || textInput.trim()) && (
@@ -247,13 +453,37 @@ export default function PdfUploader() {
                 >
                   <span className="emoji emoji-copy">📋</span>
                 </button>
+                
               )}
-              <textarea
-                className={styles.resultTextArea}
-                value={summary}
-                readOnly
-                placeholder="Hasil ringkasan akan muncul di sini..."
-              />
+              
+              <div className={styles.resultTextArea} tabIndex={0}>
+                {summary ? (
+                  renderSummary(summary)
+                ) : (
+                  <span style={{ color: '#8b0000', opacity: 0.5 }}>
+                    Hasil ringkasan akan muncul di sini...
+                  </span>
+                )}
+              </div>
+              
+              <div>
+                <button 
+                  onClick={handleExportTxt}
+                  disabled={!summary}
+                  className={styles.exportButton}
+                >
+                  📄 Export TXT
+                </button>
+
+                <button 
+                  onClick={handleExportPdf}
+                  disabled={!summary}
+                  className={styles.exportButton}
+                >
+                  📑 Export PDF
+                </button>
+              </div>
+
             </div>
           </div>
         </div>

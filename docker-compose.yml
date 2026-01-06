@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: pdf-postgres
+    environment:
+      POSTGRES_DB: pdf_db
+      POSTGRES_USER: pdf_user
+      POSTGRES_PASSWORD: pdf_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - pdf-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pdf_user -d pdf_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Go Backend (Fiber)
+  backend:
+    build:
+      context: ./backend-fiber
+      dockerfile: Dockerfile
+    container_name: pdf-backend
+    environment:
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: pdf_user
+      DB_PASSWORD: pdf_password
+      DB_NAME: pdf_db
+      PORT: 8080
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./backend-fiber/uploads:/app/uploads
+    networks:
+      - pdf-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Python AI Summarizer
+  ai-summarizer:
+    build:
+      context: ./pdf-ai-summarizer
+      dockerfile: Dockerfile
+    container_name: pdf-ai-summarizer
+    environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - BACKEND_URL=http://backend:8080
+    ports:
+      - "8000:8000"
+    networks:
+      - pdf-network
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # Next.js Frontend
+  frontend:
+    build:
+      context: ./pdf-ai-frontend
+      dockerfile: Dockerfile
+    container_name: pdf-frontend
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://localhost:8080
+      - NEXT_PUBLIC_AI_URL=http://localhost:8000
+    ports:
+      - "3000:3000"
+    networks:
+      - pdf-network
+    depends_on:
+      - backend
+      - ai-summarizer
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  pdf-network:
+    driver: bridge

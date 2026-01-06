@@ -1,27 +1,26 @@
 "use client";
 
 import { useState } from "react";
-import Navbar from "./components/Navbar";
 import Sidebar from "./components/Sidebar";
 import PdfUploader from "./components/pdfupload";
+import PdfManager from "./components/PdfManager";
 
 export default function Home() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("uploader");
 
   return (
-    <>
-      <Navbar
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-      />
-
-      <div style={{ display: "flex" }}>
-        {sidebarOpen && <Sidebar />}
-
-        <main style={{ flex: 1 }}>
-          <PdfUploader />
-        </main>
-      </div>
-    </>
+    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#f8f9fa" }}>
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      
+      <main style={{ 
+        flex: 1, 
+        padding: "30px", 
+        backgroundColor: "#f8f9fa",
+        overflowY: "auto"
+      }}>
+        {activeTab === "uploader" && <PdfUploader />}
+        {activeTab === "manager" && <PdfManager />}
+      </main>
+    </div>
   );
 }
