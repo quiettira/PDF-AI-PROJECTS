@@ -17,7 +17,7 @@ func Setup(app *fiber.App, db *sql.DB, cfg config.Config) {
 
 	// Routes
 	app.Post("/upload", uploadHandler.Upload)
-	app.Get("/pdf/:id", pdfHandler.GetPDF) 
+	app.Get("/pdf/:id", pdfHandler.GetPDF)
 	app.Delete("/pdf/:id", pdfHandler.DeletePDF)
 	app.Get("/pdf/:id/download", pdfHandler.DownloadPDF)
 	app.Get("/history", pdfHandler.GetHistory)
@@ -27,13 +27,13 @@ func Setup(app *fiber.App, db *sql.DB, cfg config.Config) {
 	app.Get("/simple-pdf/:id", pdfHandler.SimplePDFByID)
 	app.Put("/update-pdf/:id", pdfHandler.UpdatePDF)
 	app.Post("/resummarize/:id", pdfHandler.Resummarize)
-	app.Put("/update-summary/:id", pdfHandler.UpdateSummary)
 	app.Get("/summaries/:id", pdfHandler.GetSummaries)
 }
+
 //Kita membuat handler sekali
 //DB & config disuntikkan ke handler
 //Supaya:
 //rapi
 //gampang dites
 //tidak pakai global variable
-//📌 Ini disebut Dependency Injection
+// Ini disebut Dependency Injection

@@ -38,7 +38,8 @@ func Init(cfg config.Config) (*sql.DB, error) {
 		}
 		fmt.Printf("Database connection attempt %d failed, retrying...\n", i+1)
 		// Simple sleep without importing time package
-		for j := 0; j < 3000000000; j++ {} // ~3 second delay
+		for j := 0; j < 3000000000; j++ {
+		} // ~3 second delay
 	}
 
 	if err := autoMigrate(db); err != nil { //mengatur tabel
@@ -50,7 +51,7 @@ func Init(cfg config.Config) (*sql.DB, error) {
 }
 
 func autoMigrate(db *sql.DB) error { //membuat tabel, nambah kolom lek gada
-	ctx := context.Background() 
+	ctx := context.Background()
 
 	// Create pdf_files table
 	if _, err := db.ExecContext(ctx, ` 
@@ -87,20 +88,24 @@ func autoMigrate(db *sql.DB) error { //membuat tabel, nambah kolom lek gada
 	_, _ = db.ExecContext(ctx, `ALTER TABLE pdf_files ADD COLUMN IF NOT EXISTS upload_time TIMESTAMP DEFAULT NOW()`)
 	_, _ = db.ExecContext(ctx, `ALTER TABLE summaries ADD COLUMN IF NOT EXISTS summary_style VARCHAR(50) DEFAULT 'standard'`)
 	_, _ = db.ExecContext(ctx, `ALTER TABLE summaries ADD COLUMN IF NOT EXISTS language_detected VARCHAR(10)`)
-	
+
 	// Add latest_summary column to pdf_files table
 	_, _ = db.ExecContext(ctx, `ALTER TABLE pdf_files ADD COLUMN IF NOT EXISTS latest_summary TEXT`)
 
-	// Create trigger function to update latest_summary
+	// Keep trigger logic minimal: only needed on INSERT (upload/resummarize)
+	_, _ = db.ExecContext(ctx, `DROP TRIGGER IF EXISTS trigger_sync_latest_summary_insert ON summaries`)
+	_, _ = db.ExecContext(ctx, `DROP TRIGGER IF EXISTS trigger_sync_latest_summary_update ON summaries`)
+	_, _ = db.ExecContext(ctx, `DROP TRIGGER IF EXISTS trigger_sync_latest_summary_delete ON summaries`)
+	_, _ = db.ExecContext(ctx, `DROP FUNCTION IF EXISTS sync_latest_summary()`)
+
+	// Create trigger function to update latest_summary on new summary insert
 	if _, err := db.ExecContext(ctx, `
 		CREATE OR REPLACE FUNCTION update_latest_summary()
 		RETURNS TRIGGER AS $$
 		BEGIN
-			-- Update pdf_files with the latest summary
-			UPDATE pdf_files 
+			UPDATE pdf_files
 			SET latest_summary = NEW.summary_text
 			WHERE id = NEW.pdf_id;
-			
 			RETURN NEW;
 		END;
 		$$ LANGUAGE plpgsql;

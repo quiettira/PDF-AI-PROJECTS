@@ -3,10 +3,10 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json" //untuk parsing response pyhton
-	"fmt" 
+	"fmt"
 	"os"
 	"strconv"
-	"time" 
+	"time"
 
 	"pdf-backend-fiber/internal/config"
 	"pdf-backend-fiber/internal/models"
@@ -172,14 +172,14 @@ func (h *PdfHandler) GetHistory(c *fiber.Ctx) error {
 	for rows.Next() {
 		var item models.HistoryItem
 		var latestSummary string
-		
+
 		if err := rows.Scan(&item.ID, &item.Filename, &item.Filesize, &item.UploadedAt, &latestSummary); err != nil {
 			return c.Status(500).JSON(fiber.Map{"error": "Gagal parsing data"})
 		}
 
 		item.Status = "completed"
 		item.Summary = latestSummary
-		
+
 		// Set ProcessedAt if summary exists
 		if latestSummary != "" {
 			item.ProcessedAt = time.Now()
@@ -378,48 +378,6 @@ func (h *PdfHandler) Resummarize(c *fiber.Ctx) error {
 	})
 }
 
-func (h *PdfHandler) UpdateSummary(c *fiber.Ctx) error {
-	summaryID, err := strconv.Atoi(c.Params("id"))
-	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid Summary ID"})
-	}
-
-	var updateData struct {
-		SummaryText string `json:"summary_text"`
-		Style       string `json:"style,omitempty"`
-	}
-
-	if err := c.BodyParser(&updateData); err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid JSON"})
-	}
-
-	if updateData.SummaryText == "" {
-		return c.Status(400).JSON(fiber.Map{"error": "Summary text is required"})
-	}
-
-	result, err := h.DB.Exec(
-		`UPDATE summaries SET summary_text = $1, summary_style = COALESCE($2, summary_style)
-		 WHERE id = $3`,
-		updateData.SummaryText,
-		updateData.Style,
-		summaryID,
-	)
-	if err != nil {
-		return c.Status(500).JSON(fiber.Map{"error": fmt.Sprintf("Update failed: %v", err)})
-	}
-
-	rowsAffected, _ := result.RowsAffected()
-	if rowsAffected == 0 {
-		return c.Status(404).JSON(fiber.Map{"error": "Summary not found"})
-	}
-
-	return c.JSON(fiber.Map{
-		"success":    true,
-		"message":    "Summary updated successfully",
-		"summary_id": summaryID,
-	})
-}
-
 func (h *PdfHandler) GetSummaries(c *fiber.Ctx) error {
 	pdfID, err := strconv.Atoi(c.Params("id"))
 	if err != nil {
@@ -464,4 +422,5 @@ func (h *PdfHandler) GetSummaries(c *fiber.Ctx) error {
 		"count":     len(summaries),
 	})
 }
+
 //logika utama pdf sumarizernya daari crud,dll
