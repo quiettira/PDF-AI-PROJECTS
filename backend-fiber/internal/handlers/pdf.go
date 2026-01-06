@@ -156,8 +156,9 @@ func (h *PdfHandler) GetHistory(c *fiber.Ctx) error {
 		return c.Status(500).JSON(fiber.Map{"error": "Gagal menghitung total data"})
 	}
 
+	// Single query with latest_summary - NO MORE JOIN!
 	rows, err := h.DB.Query(`
-		SELECT id, filename, filesize, created_at
+		SELECT id, filename, filesize, created_at, COALESCE(latest_summary, '') as latest_summary
 		FROM pdf_files
 		ORDER BY created_at DESC
 		LIMIT $1 OFFSET $2
@@ -170,28 +171,18 @@ func (h *PdfHandler) GetHistory(c *fiber.Ctx) error {
 	var history []models.HistoryItem
 	for rows.Next() {
 		var item models.HistoryItem
-		if err := rows.Scan(&item.ID, &item.Filename, &item.Filesize, &item.UploadedAt); err != nil {
+		var latestSummary string
+		
+		if err := rows.Scan(&item.ID, &item.Filename, &item.Filesize, &item.UploadedAt, &latestSummary); err != nil {
 			return c.Status(500).JSON(fiber.Map{"error": "Gagal parsing data"})
 		}
 
 		item.Status = "completed"
-
-		// Get summary if exists
-		var sum sql.NullString
-		var ptms sql.NullInt64
-		if err := h.DB.QueryRow(`
-			SELECT summary_text, process_time_ms
-			FROM summaries
-			WHERE pdf_id = $1
-			ORDER BY id DESC
-			LIMIT 1
-		`, item.ID).Scan(&sum, &ptms); err == nil {
-			if sum.Valid {
-				item.Summary = sum.String
-			}
-			if ptms.Valid {
-				item.ProcessedAt = time.Now()
-			}
+		item.Summary = latestSummary
+		
+		// Set ProcessedAt if summary exists
+		if latestSummary != "" {
+			item.ProcessedAt = time.Now()
 		}
 
 		history = append(history, item)
@@ -209,7 +200,8 @@ func (h *PdfHandler) GetHistory(c *fiber.Ctx) error {
 
 func (h *PdfHandler) SimplePDFs(c *fiber.Ctx) error {
 	rows, err := h.DB.Query(`
-		SELECT id, filename, COALESCE(original_filename, filename) as original_filename, filesize, upload_time
+		SELECT id, filename, COALESCE(original_filename, filename) as original_filename, 
+		       filesize, upload_time, COALESCE(latest_summary, '') as latest_summary
 		FROM pdf_files
 		ORDER BY id DESC
 		LIMIT 20
@@ -222,11 +214,11 @@ func (h *PdfHandler) SimplePDFs(c *fiber.Ctx) error {
 	var pdfs []map[string]interface{}
 	for rows.Next() {
 		var id int
-		var filename, originalFilename string
+		var filename, originalFilename, latestSummary string
 		var filesize int64
 		var uploadTime time.Time
 
-		if err := rows.Scan(&id, &filename, &originalFilename, &filesize, &uploadTime); err != nil {
+		if err := rows.Scan(&id, &filename, &originalFilename, &filesize, &uploadTime, &latestSummary); err != nil {
 			return c.Status(500).JSON(fiber.Map{"error": fmt.Sprintf("Scan Error: %v", err)})
 		}
 
@@ -236,6 +228,7 @@ func (h *PdfHandler) SimplePDFs(c *fiber.Ctx) error {
 			"original_filename": originalFilename,
 			"filesize":          filesize,
 			"upload_time":       uploadTime,
+			"latest_summary":    latestSummary,
 		})
 	}
 
@@ -252,14 +245,15 @@ func (h *PdfHandler) SimplePDFByID(c *fiber.Ctx) error {
 	}
 
 	var id int
-	var filename, originalFilename, fp string
+	var filename, originalFilename, fp, latestSummary string
 	var filesize int64
 	var uploadTime time.Time
 
 	err = h.DB.QueryRow(`
-		SELECT id, filename, COALESCE(original_filename, filename) as original_filename, filepath, filesize, upload_time
+		SELECT id, filename, COALESCE(original_filename, filename) as original_filename, 
+		       filepath, filesize, upload_time, COALESCE(latest_summary, '') as latest_summary
 		FROM pdf_files WHERE id = $1
-	`, pdfID).Scan(&id, &filename, &originalFilename, &fp, &filesize, &uploadTime)
+	`, pdfID).Scan(&id, &filename, &originalFilename, &fp, &filesize, &uploadTime, &latestSummary)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return c.Status(404).JSON(fiber.Map{"error": "PDF not found"})
@@ -274,6 +268,7 @@ func (h *PdfHandler) SimplePDFByID(c *fiber.Ctx) error {
 		"filepath":          fp,
 		"filesize":          filesize,
 		"upload_time":       uploadTime,
+		"latest_summary":    latestSummary,
 	})
 }
 

@@ -5,16 +5,6 @@ import styles from "./pdfupload.module.css";
 const API_BASE_URL = process.env.NEXT_PUBLIC_PY_API_BASE_URL || "http://localhost:8000"; // Python AI service
 const GO_API_BASE_URL = process.env.NEXT_PUBLIC_GO_API_BASE_URL || "http://localhost:8080"; // Go backend
 
-// Check if backend is available
-const checkBackendHealth = async () => {
-  try {
-    const response = await fetch(`${GO_API_BASE_URL}/pdfs`, { method: 'GET' });
-    return response.ok;
-  } catch {
-    return false;
-  }
-};
-
 const SUMMARY_STYLES = [
   { value: "standard", label: "Standard", icon: "📄", iconClass: "emoji emoji-document", description: "Ringkasan paragraf normal" },
   { value: "executive", label: "Executive", icon: "👔", iconClass: "emoji", description: "Ringkasan untuk eksekutif" },
@@ -29,7 +19,6 @@ export default function PdfUploader() {
   const [summaryStyle, setSummaryStyle] = useState("standard");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [useGoBackend, setUseGoBackend] = useState(true); // Default to Go backend
   const [backendStatus, setBackendStatus] = useState({ go: false, python: false });
 
   // Check backend health on component mount
@@ -167,31 +156,25 @@ Jalankan: start-all.bat untuk memulai semua service`;
     setError("");
 
     try {
-      if (useGoBackend) {
-        // Use Go backend (upload + summarize in one call)
-        const formData = new FormData();
-        formData.append("file", file);
-        
-        const response = await fetch(
-          `${GO_API_BASE_URL}/upload?style=${encodeURIComponent(summaryStyle)}`,
-          {
-          method: "POST",
-          body: formData,
-          }
-        );
-        
-        if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(errorText || "Upload failed");
+      // Always use Go backend (upload + summarize in one call)
+      const formData = new FormData();
+      formData.append("file", file);
+      
+      const response = await fetch(
+        `${GO_API_BASE_URL}/upload?style=${encodeURIComponent(summaryStyle)}`,
+        {
+        method: "POST",
+        body: formData,
         }
-        
-        const data = await response.json();
-        setSummary(data.summary || "");
-      } else {
-        // Use Python backend (original flow)
-        const data = await fetchAPI("/summarize", file, { style: summaryStyle });
-        setSummary(data.summary || "");
+      );
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Upload failed");
       }
+      
+      const data = await response.json();
+      setSummary(data.summary || "");
     } catch (err) {
       setError(parseError(err));
     } finally {
@@ -297,17 +280,11 @@ Jalankan: start-all.bat untuk memulai semua service`;
           </p>
           
           {/* Backend Status */}
-          <div style={{ 
-            display: "flex", 
-            gap: "1rem", 
-            marginTop: "1rem", 
-            fontSize: "0.85rem",
-            justifyContent: "center"
-          }}>
-            <span style={{ color: backendStatus.go ? "green" : "red" }}>
+          <div className={styles.statusContainer}>
+            <span className={styles.statusItem} style={{ color: backendStatus.go ? "#10b981" : "#ef4444" }}>
               {backendStatus.go ? "✅" : "❌"} Go Backend
             </span>
-            <span style={{ color: backendStatus.python ? "green" : "red" }}>
+            <span className={styles.statusItem} style={{ color: backendStatus.python ? "#10b981" : "#ef4444" }}>
               {backendStatus.python ? "✅" : "❌"} Python AI
             </span>
           </div>
@@ -377,23 +354,6 @@ Jalankan: start-all.bat untuk memulai semua service`;
               disabled={!file} //jika tidak ada file yang diunggah maka textarea tidak bisa diubah
             />
 
-            {/* Backend Selection */}
-            <div className={styles.backendSelector}>
-              <label className={styles.backendLabel}>
-                <input
-                  type="checkbox"
-                  checked={useGoBackend}
-                  onChange={(e) => setUseGoBackend(e.target.checked)}
-                />
-                <span>🚀 Use Go Backend (Save to Database)</span>
-              </label>
-              <p className={styles.backendHint}>
-                {useGoBackend 
-                  ? "PDF akan disimpan ke database dan bisa dikelola di PDF Manager" 
-                  : "Hanya summarize tanpa menyimpan ke database"}
-              </p>
-            </div>
-
             {/* Style Selector */}
             {(file || textInput.trim()) && (
               <div className={styles.styleSelector}>
@@ -460,8 +420,8 @@ Jalankan: start-all.bat untuk memulai semua service`;
                 {summary ? (
                   renderSummary(summary)
                 ) : (
-                  <span style={{ color: '#8b0000', opacity: 0.5 }}>
-                    Hasil ringkasan akan muncul di sini...
+                  <span className={styles.placeholderText}>
+                    Hasil ringkasan akan muncul di sini.
                   </span>
                 )}
               </div>

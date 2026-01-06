@@ -4,20 +4,16 @@ import { useState } from "react";
 import Sidebar from "./components/Sidebar";
 import PdfUploader from "./components/pdfupload";
 import PdfManager from "./components/PdfManager";
+import styles from "./page.module.css";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState("uploader");
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", backgroundColor: "#f8f9fa" }}>
+    <div className={styles.container}>
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
       
-      <main style={{ 
-        flex: 1, 
-        padding: "30px", 
-        backgroundColor: "#f8f9fa",
-        overflowY: "auto"
-      }}>
+      <main className={styles.main}>
         {activeTab === "uploader" && <PdfUploader />}
         {activeTab === "manager" && <PdfManager />}
       </main>

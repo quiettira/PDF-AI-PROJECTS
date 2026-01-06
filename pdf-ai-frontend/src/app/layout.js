@@ -8,8 +8,8 @@ const poppins = Poppins({
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <body className={poppins.className}>
+    <html lang="en" style={{ background: "linear-gradient(135deg, #0a1929 0%, #1a2332 100%)" }}>
+      <body className={poppins.className} style={{ margin: 0, padding: 0, background: "transparent" }}>
         {children}
       </body>
     </html>

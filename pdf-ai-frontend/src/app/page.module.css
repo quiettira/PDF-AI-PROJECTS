@@ -1,0 +1,25 @@
+.container {
+  display: flex;
+  flex-direction: row;
+  min-height: 100vh;
+  background: #0b1220;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.main {
+  flex: 1;
+  padding: 0;
+  background: transparent;
+  overflow-y: auto;
+  min-width: 0;
+  width: 100%;
+}
+
+/* Responsive Layout */
+@media (max-width: 968px) {
+  .container {
+    flex-direction: column;
+  }
+}
+

@@ -3,6 +3,7 @@ package main
 import (
 	"log" // utk mnmpilkan pesan error ke terminal 
 	"os"
+	"time"
 
 	"pdf-backend-fiber/internal/config" 
 	"pdf-backend-fiber/internal/database"
@@ -14,6 +15,14 @@ import (
 )
 
 func main() {
+	// Set timezone to Indonesia (WIB - UTC+7)
+	loc, err := time.LoadLocation("Asia/Jakarta")
+	if err != nil {
+		log.Printf("Warning: Could not load Asia/Jakarta timezone: %v", err)
+	} else {
+		time.Local = loc
+	}
+
 	// Load config
 	cfg := config.Load()
 

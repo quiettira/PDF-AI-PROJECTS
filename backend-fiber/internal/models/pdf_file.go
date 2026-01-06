@@ -10,6 +10,7 @@ type PdfFile struct {
 	Filesize         int64     `json:"filesize" db:"filesize"`
 	UploadTime       time.Time `json:"upload_time" db:"upload_time"`
 	CreatedAt        time.Time `json:"created_at" db:"created_at"`
+	LatestSummary    string    `json:"latest_summary" db:"latest_summary"`
 }
 
 type HistoryItem struct {
