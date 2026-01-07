@@ -21,6 +21,14 @@ type PdfHandler struct { //menyimpan semua kebutuhan handlerpdf
 	Python *services.PythonClient
 }
 
+func getJakartaLocation() *time.Location {
+	loc, err := time.LoadLocation("Asia/Jakarta")
+	if err != nil {
+		return time.Local
+	}
+	return loc
+}
+
 func NewPdfHandler(db *sql.DB, cfg config.Config) *PdfHandler {
 	return &PdfHandler{
 		DB:     db,
@@ -34,6 +42,8 @@ func (h *PdfHandler) GetPDF(c *fiber.Ctx) error {
 	if err != nil {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid PDF ID"})
 	}
+
+	jakartaLoc := getJakartaLocation()
 
 	var id int
 	var filename, originalFilename, fp string
@@ -50,6 +60,9 @@ func (h *PdfHandler) GetPDF(c *fiber.Ctx) error {
 		}
 		return c.Status(500).JSON(fiber.Map{"error": "Database error"})
 	}
+
+	uploadTime = uploadTime.In(jakartaLoc)
+	createdAt = createdAt.In(jakartaLoc)
 
 	// Get summaries
 	summaryRows, err := h.DB.Query(`
@@ -76,7 +89,7 @@ func (h *PdfHandler) GetPDF(c *fiber.Ctx) error {
 			"style":             summaryStyle,
 			"process_time_ms":   processTimeMs,
 			"language_detected": languageDetected,
-			"created_at":        summaryCreatedAt,
+			"created_at":        summaryCreatedAt.In(jakartaLoc),
 		})
 	}
 
@@ -149,6 +162,8 @@ func (h *PdfHandler) GetHistory(c *fiber.Ctx) error {
 	limit := c.QueryInt("limit", 10)
 	offset := c.QueryInt("offset", 0)
 
+	jakartaLoc := getJakartaLocation()
+
 	// Get total count
 	var totalCount int
 	err := h.DB.QueryRow(`SELECT COUNT(*) FROM pdf_files`).Scan(&totalCount)
@@ -179,10 +194,11 @@ func (h *PdfHandler) GetHistory(c *fiber.Ctx) error {
 
 		item.Status = "completed"
 		item.Summary = latestSummary
+		item.UploadedAt = item.UploadedAt.In(jakartaLoc)
 
 		// Set ProcessedAt if summary exists
 		if latestSummary != "" {
-			item.ProcessedAt = time.Now()
+			item.ProcessedAt = time.Now().In(jakartaLoc)
 		}
 
 		history = append(history, item)
@@ -199,6 +215,8 @@ func (h *PdfHandler) GetHistory(c *fiber.Ctx) error {
 }
 
 func (h *PdfHandler) SimplePDFs(c *fiber.Ctx) error {
+	jakartaLoc := getJakartaLocation()
+
 	rows, err := h.DB.Query(`
 		SELECT id, filename, COALESCE(original_filename, filename) as original_filename, 
 		       filesize, upload_time, COALESCE(latest_summary, '') as latest_summary
@@ -222,6 +240,8 @@ func (h *PdfHandler) SimplePDFs(c *fiber.Ctx) error {
 			return c.Status(500).JSON(fiber.Map{"error": fmt.Sprintf("Scan Error: %v", err)})
 		}
 
+		uploadTime = uploadTime.In(jakartaLoc)
+
 		pdfs = append(pdfs, map[string]interface{}{
 			"id":                id,
 			"filename":          filename,
@@ -244,6 +264,8 @@ func (h *PdfHandler) SimplePDFByID(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid PDF ID"})
 	}
 
+	jakartaLoc := getJakartaLocation()
+
 	var id int
 	var filename, originalFilename, fp, latestSummary string
 	var filesize int64
@@ -260,6 +282,8 @@ func (h *PdfHandler) SimplePDFByID(c *fiber.Ctx) error {
 		}
 		return c.Status(500).JSON(fiber.Map{"error": fmt.Sprintf("Database error: %v", err)})
 	}
+
+	uploadTime = uploadTime.In(jakartaLoc)
 
 	return c.JSON(fiber.Map{
 		"id":                id,
@@ -384,6 +408,8 @@ func (h *PdfHandler) GetSummaries(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Invalid PDF ID"})
 	}
 
+	jakartaLoc := getJakartaLocation()
+
 	rows, err := h.DB.Query(`
 		SELECT id, summary_text, summary_style, process_time_ms, language_detected, created_at
 		FROM summaries
@@ -412,7 +438,7 @@ func (h *PdfHandler) GetSummaries(c *fiber.Ctx) error {
 			"summary_style":     summaryStyle,
 			"process_time_ms":   processTimeMs,
 			"language_detected": languageDetected,
-			"created_at":        createdAt,
+			"created_at":        createdAt.In(jakartaLoc),
 		})
 	}
 

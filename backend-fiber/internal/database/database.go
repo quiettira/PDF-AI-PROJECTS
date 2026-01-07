@@ -61,8 +61,8 @@ func autoMigrate(db *sql.DB) error { //membuat tabel, nambah kolom lek gada
 			original_filename VARCHAR(255) NOT NULL,
 			filepath TEXT NOT NULL,
 			filesize BIGINT NOT NULL,
-			upload_time TIMESTAMP NOT NULL DEFAULT NOW(),
-			created_at TIMESTAMP NOT NULL DEFAULT NOW()
+			upload_time TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+			created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 		)
 	`); err != nil {
 		return err
@@ -77,7 +77,7 @@ func autoMigrate(db *sql.DB) error { //membuat tabel, nambah kolom lek gada
 			summary_style VARCHAR(50) NOT NULL DEFAULT 'standard',
 			process_time_ms BIGINT NOT NULL,
 			language_detected VARCHAR(10),
-			created_at TIMESTAMP NOT NULL DEFAULT NOW()
+			created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 		)
 	`); err != nil {
 		return err
@@ -85,9 +85,15 @@ func autoMigrate(db *sql.DB) error { //membuat tabel, nambah kolom lek gada
 
 	// Add missing columns if they don't exist
 	_, _ = db.ExecContext(ctx, `ALTER TABLE pdf_files ADD COLUMN IF NOT EXISTS original_filename VARCHAR(255)`)
-	_, _ = db.ExecContext(ctx, `ALTER TABLE pdf_files ADD COLUMN IF NOT EXISTS upload_time TIMESTAMP DEFAULT NOW()`)
+	_, _ = db.ExecContext(ctx, `ALTER TABLE pdf_files ADD COLUMN IF NOT EXISTS upload_time TIMESTAMPTZ DEFAULT NOW()`)
 	_, _ = db.ExecContext(ctx, `ALTER TABLE summaries ADD COLUMN IF NOT EXISTS summary_style VARCHAR(50) DEFAULT 'standard'`)
 	_, _ = db.ExecContext(ctx, `ALTER TABLE summaries ADD COLUMN IF NOT EXISTS language_detected VARCHAR(10)`)
+
+	// Migrate legacy TIMESTAMP columns (no timezone) -> TIMESTAMPTZ
+	// Assumption: existing values represent Asia/Jakarta local time.
+	_, _ = db.ExecContext(ctx, `ALTER TABLE pdf_files ALTER COLUMN upload_time TYPE TIMESTAMPTZ USING upload_time AT TIME ZONE 'Asia/Jakarta'`)
+	_, _ = db.ExecContext(ctx, `ALTER TABLE pdf_files ALTER COLUMN created_at TYPE TIMESTAMPTZ USING created_at AT TIME ZONE 'Asia/Jakarta'`)
+	_, _ = db.ExecContext(ctx, `ALTER TABLE summaries ALTER COLUMN created_at TYPE TIMESTAMPTZ USING created_at AT TIME ZONE 'Asia/Jakarta'`)
 
 	// Add latest_summary column to pdf_files table
 	_, _ = db.ExecContext(ctx, `ALTER TABLE pdf_files ADD COLUMN IF NOT EXISTS latest_summary TEXT`)
