@@ -20,9 +20,97 @@ export default function PdfUploader() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [backendStatus, setBackendStatus] = useState({ go: false, python: false });
+  const [isOnline, setIsOnline] = useState(true);
+  const [uploadStatusText, setUploadStatusText] = useState("");
+  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
+
+  const getFileKey = (f) => {
+    if (!f) return "";
+    return `${f.name}::${f.size}::${f.lastModified}`;
+  };
+
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  const waitForOnline = async () => {
+    if (typeof navigator === "undefined") return;
+    if (navigator.onLine) return;
+    await new Promise((resolve) => {
+      const onOnline = () => {
+        window.removeEventListener("online", onOnline);
+        resolve();
+      };
+      window.addEventListener("online", onOnline);
+    });
+  };
+
+  const fetchWithTimeout = async (url, options = {}, timeoutMs = 30000) => {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, { ...options, signal: controller.signal });
+      return res;
+    } finally {
+      clearTimeout(timeout);
+    }
+  };
+
+  const fetchJsonOrTextError = async (res, fallbackMessage) => {
+    if (res.ok) return null;
+    let message = fallbackMessage;
+    try {
+      const errJson = await res.json();
+      message = errJson.error || errJson.message || errJson.detail || JSON.stringify(errJson);
+    } catch {
+      try {
+        const errorText = await res.text();
+        message = errorText || message;
+      } catch {
+        message = fallbackMessage;
+      }
+    }
+    return message;
+  };
+
+  const retry = async (fn, { retries, baseDelayMs }) => {
+    let lastErr;
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        await waitForOnline();
+        return await fn(attempt);
+      } catch (err) {
+        lastErr = err;
+        if (attempt >= retries) break;
+        if (typeof navigator !== "undefined" && !navigator.onLine) {
+          setUploadStatusText("Koneksi terputus. Menunggu internet kembali...");
+          await waitForOnline();
+        }
+        const delay = baseDelayMs * Math.pow(2, attempt);
+        setUploadStatusText(`Mencoba lagi... (${attempt + 1}/${retries})`);
+        await sleep(delay);
+      }
+    }
+    throw lastErr;
+  };
+
+  const isPdfByMagicBytes = async (selectedFile) => {
+    try {
+      const headerBuffer = await selectedFile.slice(0, 5).arrayBuffer();
+      const headerBytes = new Uint8Array(headerBuffer);
+      const headerText = String.fromCharCode(...headerBytes);
+      return headerText === "%PDF-";
+    } catch {
+      return false;
+    }
+  };
 
   // Check backend health on component mount
   useEffect(() => {
+    setIsOnline(typeof navigator === "undefined" ? true : navigator.onLine);
+    const onOnline = () => setIsOnline(true);
+    const onOffline = () => setIsOnline(false);
+    window.addEventListener("online", onOnline);
+    window.addEventListener("offline", onOffline);
+
     const checkHealth = async () => {
       try {
         const goResponse = await fetch(`${GO_API_BASE_URL}/health`);
@@ -48,7 +136,11 @@ export default function PdfUploader() {
     const interval = setInterval(checkHealth, 10000);
     
     // Cleanup interval on unmount
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("offline", onOffline);
+    };
   }, []);
 
   // Error handling yang ramah ke user
@@ -102,12 +194,31 @@ Jalankan: start-all.bat untuk memulai semua service`;
   };
 
   const handleFileSelect = async (selectedFile) => { //mengirim request ke backend untuk preview file PDF
-    setFile(selectedFile); 
     setError(""); 
 
     if (!selectedFile) { //file dihapus atau tidak ada file yang diunggah maka clear textInput dan summary
+      setFile(null);
       setTextInput("");
       setSummary("");
+      return;
+    }
+
+    // Validate file type
+    if (selectedFile.type && selectedFile.type !== "application/pdf") {
+      setError("❌ Hanya file PDF yang diizinkan!");
+      setFile(null);
+      return;
+    }
+    if (!selectedFile.name.toLowerCase().endsWith('.pdf')) {
+      setError("❌ Hanya file PDF yang diizinkan!");
+      setFile(null);
+      return;
+    }
+
+    const isRealPdf = await isPdfByMagicBytes(selectedFile);
+    if (!isRealPdf) {
+      setError("❌ File bukan PDF valid. Pastikan file benar-benar PDF (bukan hanya rename ekstensi).");
+      setFile(null);
       return;
     }
 
@@ -119,12 +230,7 @@ Jalankan: start-all.bat untuk memulai semua service`;
       return;
     }
 
-    // Validate file type
-    if (!selectedFile.name.toLowerCase().endsWith('.pdf')) {
-      setError("❌ Hanya file PDF yang diizinkan!");
-      setFile(null);
-      return;
-    }
+    setFile(selectedFile);
 
     setLoading(true);
     try {
@@ -132,10 +238,18 @@ Jalankan: start-all.bat untuk memulai semua service`;
       setTextInput(data.preview_text || ""); //ngambil data awal pdf yang diunggah
       setSummary(""); // Clear previous summary when new file is selected
     } catch (err) {
-      setError(parseError(err));
-      setTextInput("");
+      // Handle specific PDF validation errors from backend
+      if (err.message.includes("File bukan PDF valid") || 
+          err.message.includes("Hanya file PDF yang diizinkan")) {
+        setError(`❌ ${err.message}`);
+        setFile(null);
+      } else {
+        setError(parseError(err));
+        setTextInput("");
+      }
     } finally {
       setLoading(false);
+      setTimeout(() => setUploadStatusText(""), 2000);
     }
   };
 
@@ -154,31 +268,153 @@ Jalankan: start-all.bat untuk memulai semua service`;
     setLoading(true);
     setSummary("");
     setError("");
+    setUploadStatusText("Menyiapkan unggahan...");
+    setUploadProgress({ current: 0, total: 0 });
 
     try {
-      // Always use Go backend (upload + summarize in one call)
-      const formData = new FormData();
-      formData.append("file", file);
-      
-      const response = await fetch(
-        `${GO_API_BASE_URL}/upload?style=${encodeURIComponent(summaryStyle)}`,
-        {
-        method: "POST",
-        body: formData,
-        }
-      );
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || "Upload failed");
+      const CHUNK_SIZE = 1024 * 1024;
+      const MAX_RETRIES = 5;
+      const BASE_DELAY_MS = 500;
+      const REQ_TIMEOUT_MS = 30000;
+
+      const fileKey = `${getFileKey(file)}::${summaryStyle}`;
+      const storageKey = `pdf_upload_session::${fileKey}`;
+
+      let session = null;
+      try {
+        const raw = localStorage.getItem(storageKey);
+        session = raw ? JSON.parse(raw) : null;
+      } catch {
+        session = null;
       }
-      
-      const data = await response.json();
+
+      if (!session || !session.upload_id) {
+        const initRes = await fetchWithTimeout(`${GO_API_BASE_URL}/upload/init`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            original_filename: file.name,
+            file_size: file.size,
+            chunk_size: CHUNK_SIZE,
+            total_chunks: Math.ceil(file.size / CHUNK_SIZE),
+            style: summaryStyle,
+          }),
+        }, REQ_TIMEOUT_MS);
+
+        const initErr = await fetchJsonOrTextError(initRes, "Gagal init upload");
+        if (initErr) throw new Error(initErr);
+
+        const initData = await initRes.json();
+        session = {
+          upload_id: initData.upload_id,
+          chunk_size: initData.chunk_size,
+          total_chunks: initData.total_chunks,
+          style: initData.style,
+        };
+        localStorage.setItem(storageKey, JSON.stringify(session));
+      }
+
+      setUploadStatusText("Mengecek status unggahan...");
+      let statusRes = await fetchWithTimeout(`${GO_API_BASE_URL}/upload/status?upload_id=${encodeURIComponent(session.upload_id)}`, {}, REQ_TIMEOUT_MS);
+      if (statusRes.status === 404) {
+        try {
+          localStorage.removeItem(storageKey);
+        } catch {
+        }
+        session = null;
+        const initRes = await fetchWithTimeout(`${GO_API_BASE_URL}/upload/init`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            original_filename: file.name,
+            file_size: file.size,
+            chunk_size: CHUNK_SIZE,
+            total_chunks: Math.ceil(file.size / CHUNK_SIZE),
+            style: summaryStyle,
+          }),
+        }, REQ_TIMEOUT_MS);
+        const initErr = await fetchJsonOrTextError(initRes, "Gagal init upload");
+        if (initErr) throw new Error(initErr);
+        const initData = await initRes.json();
+        session = {
+          upload_id: initData.upload_id,
+          chunk_size: initData.chunk_size,
+          total_chunks: initData.total_chunks,
+          style: initData.style,
+        };
+        localStorage.setItem(storageKey, JSON.stringify(session));
+        statusRes = await fetchWithTimeout(`${GO_API_BASE_URL}/upload/status?upload_id=${encodeURIComponent(session.upload_id)}`, {}, REQ_TIMEOUT_MS);
+      }
+
+      const statusErr = await fetchJsonOrTextError(statusRes, "Gagal cek status upload");
+      if (statusErr) throw new Error(statusErr);
+      const statusData = await statusRes.json();
+
+      const received = new Set((statusData.received || []).map((n) => Number(n)));
+      const totalChunks = Number(statusData.total_chunks || session.total_chunks || Math.ceil(file.size / CHUNK_SIZE));
+      const chunkSize = Number(statusData.chunk_size || session.chunk_size || CHUNK_SIZE);
+
+      setUploadProgress({ current: received.size, total: totalChunks });
+
+      for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+        if (received.has(chunkIndex)) continue;
+
+        setUploadStatusText("Mengunggah...");
+        setUploadProgress({ current: received.size, total: totalChunks });
+
+        const start = chunkIndex * chunkSize;
+        const end = Math.min(file.size, start + chunkSize);
+        const chunkBlob = file.slice(start, end);
+
+        await retry(async () => {
+          const formData = new FormData();
+          formData.append("upload_id", session.upload_id);
+          formData.append("chunk_index", String(chunkIndex));
+          formData.append("chunk", chunkBlob, `${file.name}.part`);
+
+          const chunkRes = await fetchWithTimeout(`${GO_API_BASE_URL}/upload/chunk`, {
+            method: "POST",
+            body: formData,
+          }, REQ_TIMEOUT_MS);
+
+          const chunkErr = await fetchJsonOrTextError(chunkRes, `Gagal upload chunk ${chunkIndex}`);
+          if (chunkErr) throw new Error(chunkErr);
+
+          received.add(chunkIndex);
+          setUploadProgress({ current: received.size, total: totalChunks });
+        }, { retries: MAX_RETRIES, baseDelayMs: BASE_DELAY_MS });
+      }
+
+      setUploadStatusText("Menyelesaikan unggahan...");
+      const completeRes = await fetchWithTimeout(`${GO_API_BASE_URL}/upload/complete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ upload_id: session.upload_id }),
+      }, 60000);
+
+      const completeErr = await fetchJsonOrTextError(completeRes, "Gagal menyelesaikan upload");
+      if (completeErr) throw new Error(completeErr);
+
+      const data = await completeRes.json();
       setSummary(data.summary || "");
+
+      setUploadStatusText("Selesai.");
+
+      try {
+        localStorage.removeItem(storageKey);
+      } catch {
+      }
     } catch (err) {
-      setError(parseError(err));
+      // Handle specific PDF validation errors
+      if (err.message.includes("File bukan PDF valid") || 
+          err.message.includes("Hanya file PDF yang diizinkan")) {
+        setError(`❌ ${err.message}`);
+      } else {
+        setError(parseError(err));
+      }
     } finally {
       setLoading(false);
+      setTimeout(() => setUploadStatusText(""), 2000);
     }
   };
 
@@ -311,7 +547,7 @@ Jalankan: start-all.bat untuk memulai semua service`;
             <div className={styles.uploadArea}>
               <input
                 type="file"
-                accept=".pdf"
+                accept="application/pdf,.pdf"
                 onChange={(e) => handleFileSelect(e.target.files[0])}
                 className={styles.fileInput}
                 id="file-upload"
@@ -321,7 +557,7 @@ Jalankan: start-all.bat untuk memulai semua service`;
                   <span className={`${styles.uploadButtonIcon} emoji emoji-upload`}>⬆️</span>
                   Pilih File PDF 
                 </label>
-                <p className={styles.uploadHint}>Upload PDF untuk melihat pratinjau</p>
+                <p className={styles.uploadHint}>Hanya file PDF yang diizinkan (maks 10MB)</p>
               </div>
 
               {file && ( 
@@ -395,6 +631,37 @@ Jalankan: start-all.bat untuk memulai semua service`;
                 </>
               )}
             </button>
+
+            {(!isOnline || uploadStatusText || (uploadProgress.total > 0)) && (
+              <div className={styles.uploadStatusWrap}>
+                {!isOnline && (
+                  <div className={styles.offlineText}>
+                    Koneksi sedang offline.
+                  </div>
+                )}
+                {uploadStatusText && (
+                  <div className={styles.uploadStatusText}>
+                    {uploadStatusText}
+                  </div>
+                )}
+                {uploadProgress.total > 0 && (
+                  <div>
+                    <div className={styles.progressMeta}>
+                      <span>Terunggah {uploadProgress.current}/{uploadProgress.total}</span>
+                      <span>{Math.round((uploadProgress.current / uploadProgress.total) * 100)}%</span>
+                    </div>
+                    <div className={styles.progressTrack}>
+                      <div
+                        className={styles.progressFill}
+                        style={{
+                          width: `${uploadProgress.total ? (uploadProgress.current / uploadProgress.total) * 100 : 0}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Right Panel - Hasil Ringkasan */}

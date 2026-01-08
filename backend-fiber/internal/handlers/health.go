@@ -27,7 +27,7 @@ func (h *HealthHandler) Health(c *fiber.Ctx) error { //method healthhandler, fib
 }
 
 func (h *HealthHandler) TestDB(c *fiber.Ctx) error { //endpoint tesdb apkh db bnr bnr bs diakses GET/HEALTH/DB
-	var count int //jumlah file pdfnya
+	var count int                                                       //jumlah file pdfnya
 	err := h.DB.QueryRow("SELECT COUNT(*) FROM pdf_files").Scan(&count) // ngambil query trus hitung jumlahnya, hasil dimasukkan ke var count
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{
@@ -36,8 +36,9 @@ func (h *HealthHandler) TestDB(c *fiber.Ctx) error { //endpoint tesdb apkh db bn
 	}
 
 	return c.JSON(fiber.Map{
-		"status":    "ok", //jika berhasil, kembalikan ok
+		"status":    "ok",  //jika berhasil, kembalikan ok
 		"pdf_count": count, //jumlah file pdf
 	})
 }
+
 //for learn alat pengecek health

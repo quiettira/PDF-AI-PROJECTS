@@ -1,23 +1,23 @@
 package main
 
 import (
-	"log" // utk mnmpilkan pesan error ke terminal 
-	"os"
-	"time"
+	"log" // utk mnmpilkan pesan error ke terminal
+	"os" 
+	"time" 
 
-	"pdf-backend-fiber/internal/config" 
+	"pdf-backend-fiber/internal/config"
 	"pdf-backend-fiber/internal/database"
 	"pdf-backend-fiber/internal/routes"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors" 
-	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/fiber/v2/middleware/logger" //untuk log request
 )
 
 func main() {
-	// Set timezone to Indonesia (WIB - UTC+7)
+	// biar gapake utc, jadi sinkron sama waktu indo
 	loc, err := time.LoadLocation("Asia/Jakarta")
-	if err != nil {
+	if err != nil { //kalo gagal ttp jalan tp warning dksh
 		log.Printf("Warning: Could not load Asia/Jakarta timezone: %v", err)
 	} else {
 		time.Local = loc
@@ -36,12 +36,12 @@ func main() {
 	}
 
 	// Create Fiber app
-	app := fiber.New(fiber.Config{ 
-		BodyLimit: int(cfg.MaxFileSize), 
+	app := fiber.New(fiber.Config{
+		BodyLimit: int(cfg.MaxFileSize),
 	})
 
 	// Middleware
-	app.Use(logger.New()) 
+	app.Use(logger.New()) //setiap request bs tmpil ke terminal
 	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
 		AllowMethods: "GET,POST,PUT,DELETE,OPTIONS",

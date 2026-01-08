@@ -2,7 +2,7 @@ package models
 
 import "time"
 
-type Summary struct { 
+type Summary struct {
 	ID               int       `json:"id" db:"id"`
 	PdfID            int       `json:"pdf_id" db:"pdf_id"`
 	SummaryText      string    `json:"summary_text" db:"summary_text"`

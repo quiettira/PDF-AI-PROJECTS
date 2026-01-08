@@ -134,42 +134,18 @@ func (h *PdfHandler) DeletePDF(c *fiber.Ctx) error {
 	})
 }
 
-func (h *PdfHandler) DownloadPDF(c *fiber.Ctx) error {
-	pdfID, err := strconv.Atoi(c.Params("id"))
-	if err != nil {
-		return c.Status(400).JSON(fiber.Map{"error": "Invalid PDF ID"})
-	}
-
-	var fp, originalFilename string
-	err = h.DB.QueryRow("SELECT filepath, original_filename FROM pdf_files WHERE id = $1", pdfID).Scan(&fp, &originalFilename)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return c.Status(404).JSON(fiber.Map{"error": "PDF not found"})
-		}
-		return c.Status(500).JSON(fiber.Map{"error": "Database error"})
-	}
-
-	if _, err := os.Stat(fp); os.IsNotExist(err) {
-		return c.Status(404).JSON(fiber.Map{"error": "File not found on disk"})
-	}
-
-	c.Set("Content-Type", "application/pdf")
-	c.Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", originalFilename))
-	return c.SendFile(fp)
-}
-
 func (h *PdfHandler) GetHistory(c *fiber.Ctx) error {
-	limit := c.QueryInt("limit", 10)
-	offset := c.QueryInt("offset", 0)
+	limit := c.QueryInt("limit", 10) //brp data perhalaman utk pagination nih
+	offset := c.QueryInt("offset", 0) //mulai dr data ke brp
 
 	jakartaLoc := getJakartaLocation()
 
-	// Get total count
+	// Get total count buat paginasi
 	var totalCount int
 	err := h.DB.QueryRow(`SELECT COUNT(*) FROM pdf_files`).Scan(&totalCount)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Gagal menghitung total data"})
-	}
+	} //frontend perlu ta totalnya buat pagination
 
 	// Single query with latest_summary - NO MORE JOIN!
 	rows, err := h.DB.Query(`
@@ -184,7 +160,7 @@ func (h *PdfHandler) GetHistory(c *fiber.Ctx) error {
 	defer rows.Close()
 
 	var history []models.HistoryItem
-	for rows.Next() {
+	for rows.Next() { //1 baris 1 pdf
 		var item models.HistoryItem
 		var latestSummary string
 

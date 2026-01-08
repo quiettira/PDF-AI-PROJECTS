@@ -29,4 +29,5 @@ type HistoryResponse struct {
 	Data    []HistoryItem `json:"data,omitempty"`
 	Total   int           `json:"total,omitempty"`
 }
+
 //File ini tidak berisi logika, melainkan hanya definisi bentuk data agar pengolahan dan pengiriman data menjadi konsisten.

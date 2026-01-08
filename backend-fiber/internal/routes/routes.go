@@ -16,10 +16,12 @@ func Setup(app *fiber.App, db *sql.DB, cfg config.Config) {
 	healthHandler := handlers.NewHealthHandler(db)
 
 	// Routes
-	app.Post("/upload", uploadHandler.Upload)
+	app.Post("/upload/init", uploadHandler.InitChunkUpload)
+	app.Post("/upload/chunk", uploadHandler.UploadChunk)
+	app.Get("/upload/status", uploadHandler.UploadStatus)
+	app.Post("/upload/complete", uploadHandler.CompleteChunkUpload)
 	app.Get("/pdf/:id", pdfHandler.GetPDF)
 	app.Delete("/pdf/:id", pdfHandler.DeletePDF)
-	app.Get("/pdf/:id/download", pdfHandler.DownloadPDF)
 	app.Get("/history", pdfHandler.GetHistory)
 	app.Get("/health", healthHandler.Health)
 	app.Get("/test-db", healthHandler.TestDB)

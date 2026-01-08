@@ -2,11 +2,14 @@
   min-height: 100vh;
   background: #0b1220;
   padding: 2rem 1rem;
+  overflow-x: hidden;
 }
 
 .wrapper {
   max-width: 1400px;
   margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .header {
@@ -31,16 +34,6 @@
   font-family: "Poppins", sans-serif;
 }
 
-.uploadSection {
-  background: rgba(15, 23, 42, 0.75);
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  border-radius: 16px;
-  padding: 2rem;
-  margin-bottom: 2rem;
-  margin-top: 2rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
-}
-
 .sectionTitle {
   font-size: 1.4rem;
   font-weight: 600;
@@ -49,107 +42,6 @@
   margin-top: 0;
   font-family: "Poppins", sans-serif;
   letter-spacing: -0.01em;
-}
-
-.uploadArea {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.fileInput {
-  display: none;
-}
-
-.uploadButton {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 12px 24px;
-  background: #2563eb;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  font-family: "Poppins", sans-serif;
-  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.25);
-  align-self: flex-start;
-}
-
-.uploadButton:hover {
-  background: #1d4ed8;
-  transform: translateY(-2px);
-  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.28);
-}
-
-.uploadButton:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.35), 0 10px 22px rgba(37, 99, 235, 0.22);
-}
-
-.selectedFile {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  background: rgba(2, 6, 23, 0.45);
-  border-radius: 10px;
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  width: 100%;
-  color: #e2e8f0;
-}
-
-.selectedFile > div {
-  flex: 1;
-  color: #e2e8f0;
-}
-
-.uploadBtn {
-  padding: 8px 16px;
-  background: #16a34a;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: all 0.2s ease;
-  box-shadow: 0 6px 16px rgba(22, 163, 74, 0.22);
-}
-
-.uploadBtn:hover:not(:disabled) {
-  background: #15803d;
-  transform: translateY(-1px);
-  box-shadow: 0 10px 20px rgba(22, 163, 74, 0.24);
-}
-
-.uploadBtn:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.32), 0 10px 20px rgba(22, 163, 74, 0.2);
-}
-
-.uploadBtn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.cancelBtn {
-  padding: 8px 12px;
-  background: #ef4444;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 0.9rem;
-  transition: all 0.2s ease;
-}
-
-.cancelBtn:hover {
-  background: #dc2626;
-  transform: translateY(-1px);
 }
 
 .error {
@@ -195,6 +87,8 @@
   border-radius: 16px;
   padding: 2rem;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .listHeader {
@@ -206,8 +100,179 @@
   margin-bottom: 25px;
 }
 
+.controlsRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+@media (max-width: 1400px) {
+  .controlsRow {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 968px) {
+  .controlsRow {
+    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media (max-width: 420px) {
+  .controlsRow {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+.searchWrap {
+  position: relative;
+  flex: 1 1 300px;
+  flex-basis: 100%;
+  min-width: 0;
+  max-width: 100%;
+  order: -1;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 10px 38px 10px 10px;
+  box-sizing: border-box;
+  background: rgba(2, 6, 23, 0.5);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 10px;
+  color: #e2e8f0;
+  font-family: "Poppins", sans-serif;
+  font-size: 0.9rem;
+  transition: all 0.25s ease;
+  height: 40px;
+}
+
+.searchInput:focus {
+  outline: none;
+  border-color: #60a5fa;
+  background: rgba(2, 6, 23, 0.65);
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.15);
+}
+
+.searchInput::placeholder {
+  color: #94a3b8;
+  opacity: 0.8;
+}
+
+.clearSearchBtn {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(148, 163, 184, 0.12);
+  color: #e2e8f0;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.clearSearchBtn:hover {
+  background: rgba(148, 163, 184, 0.18);
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+.clearSearchBtn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.18);
+}
+
+.selectControl {
+  padding: 10px 12px;
+  box-sizing: border-box;
+  background: rgba(2, 6, 23, 0.5);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 10px;
+  color: #e2e8f0;
+  font-family: "Poppins", sans-serif;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  height: 40px;
+  min-width: 0;
+  flex: 0 1 220px;
+  max-width: 100%;
+}
+
+.selectControl:focus {
+  outline: none;
+  border-color: #60a5fa;
+  background: rgba(2, 6, 23, 0.65);
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.15);
+}
+
+.selectControl:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.sortDirBtn {
+  padding: 10px 12px;
+  box-sizing: border-box;
+  background: rgba(148, 163, 184, 0.12);
+  color: #e2e8f0;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  height: 40px;
+  flex: 0 0 56px;
+}
+
+.sortDirBtn:hover {
+  background: rgba(148, 163, 184, 0.18);
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+.sortDirBtn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(148, 163, 184, 0.18);
+}
+
+.resetFiltersBtn {
+  padding: 10px 14px;
+  box-sizing: border-box;
+  background: rgba(37, 99, 235, 0.18);
+  color: #bfdbfe;
+  border: 1px solid rgba(37, 99, 235, 0.28);
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: "Poppins", sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  height: 40px;
+  flex: 0 0 120px;
+}
+
+.resetFiltersBtn:hover {
+  background: rgba(37, 99, 235, 0.24);
+  border-color: rgba(37, 99, 235, 0.38);
+}
+
+.resetFiltersBtn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+}
+
 .refreshBtn {
   padding: 8px 16px;
+  box-sizing: border-box;
   background: rgba(148, 163, 184, 0.12);
   color: white;
   border: 1px solid rgba(148, 163, 184, 0.22);

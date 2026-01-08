@@ -135,11 +135,30 @@ npm run dev
 
 - Backend Go berjalan di `http://localhost:8080`
 - Endpoint yang paling sering dipakai:
-  - `POST /upload` (query `style=standard|executive|bullets|detailed`)
-  - `GET /simple-pdfs` (list)
-  - `GET /pdf/:id/download` (download)
+  - `POST /upload/init` (init chunk upload)
+  - `POST /upload/chunk` (upload satu chunk)
+  - `GET /upload/status?upload_id=...` (resume/check progress)
+  - `POST /upload/complete` (merge chunk + simpan DB + summarize)
+  - `GET /simple-pdfs` (list ringkas)
+  - `GET /simple-pdf/:id` (detail ringkas)
+  - `GET /pdf/:id` (detail + summaries)
+  - `PUT /update-pdf/:id` (update metadata)
+  - `POST /resummarize/:id` (buat ringkasan ulang)
+  - `GET /summaries/:id` (list semua ringkasan pdf)
+  - `DELETE /pdf/:id` (hapus PDF)
   - `GET /history` (history)
   - `GET /health` (cek service)
+
+### Python AI Service (FastAPI)
+
+- Base URL: `http://localhost:8000`
+- Endpoint:
+  - `POST /summarize?style=...` (menerima multipart file)
+  - `POST /preview` (ambil preview text)
+  - `POST /extract-text` (extract full text)
+  - `POST /export/txt` (download summary TXT)
+  - `POST /export/pdf` (generate PDF dari summary)
+  - `GET /health`
 
 ## Troubleshooting
 
@@ -158,6 +177,12 @@ npm run dev
 - Pastikan `NEXT_PUBLIC_GO_API_BASE_URL` sesuai URL backend
 - Pastikan backend Go running di `http://localhost:8080`
 
+### Upload chunk gagal / resume tidak jalan
+
+- Pastikan endpoint backend yang dipakai frontend adalah:
+  - `/upload/init`, `/upload/chunk`, `/upload/status`, `/upload/complete`
+- Pastikan folder `backend-fiber/uploads/.chunks` bisa dibuat (izin write)
+
 ---
 
-Last updated: 2025-12-11
+Last updated: 2026-01-08

@@ -1,16 +1,16 @@
 package database
 
 import (
-	"context" //kontroltimeout
+	"context" //kontroltimeout, cancel query 
 	"database/sql"
 	"fmt" //mnyusun stringkoneksidb
 
 	"pdf-backend-fiber/internal/config"
 
-	_ "github.com/lib/pq" //Wajib agar sql.Open("postgres", ...) bisa jalan
+	_ "github.com/lib/pq" //Wajib agar sql.Open("postgres", ...) bisa jalan tamda _ hanya jalankan init 
 )
 
-func Init(cfg config.Config) (*sql.DB, error) {
+func Init(cfg config.Config) (*sql.DB, error) { //pintu masuk db
 	connStr := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable connect_timeout=30",
 		cfg.DBHost,
@@ -25,9 +25,9 @@ func Init(cfg config.Config) (*sql.DB, error) {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
 
-	// Set connection pool settings
-	db.SetMaxOpenConns(25)
-	db.SetMaxIdleConns(5)
+	// koneksi pool
+	db.SetMaxOpenConns(25) //max 25 koneksi aktif
+	db.SetMaxIdleConns(5)  //max 5 koneksi nganggur
 
 	// Retry connection with timeout
 	for i := 0; i < 10; i++ {
@@ -50,7 +50,7 @@ func Init(cfg config.Config) (*sql.DB, error) {
 	return db, nil //jika berhasil, kembalikan db dan nil
 }
 
-func autoMigrate(db *sql.DB) error { //membuat tabel, nambah kolom lek gada
+func autoMigrate(db *sql.DB) error { //membuat tabel, nambah kolom lek gada, update schemalama
 	ctx := context.Background()
 
 	// Create pdf_files table

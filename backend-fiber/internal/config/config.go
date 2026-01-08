@@ -5,8 +5,8 @@ import (
 	"strconv" //string ke angka, cz always env itu string, jd ngubah ke int untuk max size
 )
 
-type Config struct { //wadah configurasi 
-	MaxFileSize int64  `json:"max_file_size"` 
+type Config struct { //wadah configurasi
+	MaxFileSize int64  `json:"max_file_size"`
 	UploadDir   string `json:"upload_dir"`
 	PythonAPI   string `json:"python_api"`
 	DBHost      string `json:"db_host"`
@@ -31,11 +31,11 @@ func Load() Config {
 	}
 } //
 
-func getEnv(key, defaultValue string) string {
+func getEnv(key, defaultValue string) string { //fungsi buat ngecek environtment variable, kalo gak ada pake default
 	if value, exists := os.LookupEnv(key); exists {
 		return value
 	}
 	return defaultValue
 }
 
-//for learn, ini pengatur semua seetting penting be. 
+//for learn, ini pengatur semua seetting penting be.

@@ -25,7 +25,7 @@ func (c *PythonClient) Summarize(filePath string, style string) (string, int64, 
 	start := time.Now() //untuk menghitung waktu prosesnya
 
 	requestURL := c.BaseURL //untuk mempersiapkan request
-	if style != "" { //untuk menambahkan query style ke request
+	if style != "" {        //untuk menambahkan query style ke request
 		u, err := url.Parse(c.BaseURL)
 		if err == nil {
 			q := u.Query()
@@ -41,7 +41,7 @@ func (c *PythonClient) Summarize(filePath string, style string) (string, int64, 
 	}
 	defer file.Close()
 
-	body := &bytes.Buffer{} //untuk menyimpan body request
+	body := &bytes.Buffer{}             //untuk menyimpan body request
 	writer := multipart.NewWriter(body) //untuk membuat writer
 
 	part, err := writer.CreateFormFile("file", filepath.Base(filePath)) //untuk membuat file form, aplod
@@ -66,13 +66,14 @@ func (c *PythonClient) Summarize(filePath string, style string) (string, int64, 
 	if err != nil {
 		return "", 0, err
 	}
-	defer resp.Body.Close() 
+	defer resp.Body.Close()
 
 	b, err := io.ReadAll(resp.Body) //untuk membaca response dari python
 	if err != nil {
 		return "", 0, err
 	}
 
-	return string(b), time.Since(start).Milliseconds(), nil	//kembalikan response, waktu proses, dan error
+	return string(b), time.Since(start).Milliseconds(), nil //kembalikan response, waktu proses, dan error
 }
-//buat komunikasi ke python ya intinya 
+
+//buat komunikasi ke python ya intinya
