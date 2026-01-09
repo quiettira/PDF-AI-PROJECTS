@@ -485,6 +485,73 @@ Jalankan: start-all.bat untuk memulai semua service`;
     }
   };
 
+  const handleExportCsv = async () => {
+    if (!summary) return;
+
+    try {
+      const res = await fetch(`${GO_API_BASE_URL}/export/csv`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          summary: summary,
+          filename: file?.name?.replace('.pdf', '') || 'summary',
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to export CSV");
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "summary.csv";
+      a.click();
+
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError("Gagal export CSV: " + err.message);
+    }
+  };
+
+  const handleExportJson = async () => {
+    if (!summary) return;
+
+    try {
+      const res = await fetch(`${GO_API_BASE_URL}/export/json`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          summary: summary,
+          filename: file?.name?.replace('.pdf', '') || 'summary',
+          title: file?.name || 'PDF Summary',
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to export JSON");
+      }
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "summary.json";
+      a.click();
+
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError("Gagal export JSON: " + err.message);
+    }
+  };
+
   // Helper function to render highlights
   const renderSummary = (text) => {
     if (!text) return null;
@@ -693,7 +760,7 @@ Jalankan: start-all.bat untuk memulai semua service`;
                 )}
               </div>
               
-              <div>
+              <div style={{ marginTop: "16px" }}>
                 <button 
                   onClick={handleExportTxt}
                   disabled={!summary}
@@ -708,6 +775,22 @@ Jalankan: start-all.bat untuk memulai semua service`;
                   className={styles.exportButton}
                 >
                   📑 Export PDF
+                </button>
+
+                <button 
+                  onClick={handleExportCsv}
+                  disabled={!summary}
+                  className={styles.exportButton}
+                >
+                  📊 Export CSV
+                </button>
+
+                <button 
+                  onClick={handleExportJson}
+                  disabled={!summary}
+                  className={styles.exportButton}
+                >
+                  🔧 Export JSON
                 </button>
               </div>
 

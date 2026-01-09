@@ -14,6 +14,7 @@ func Setup(app *fiber.App, db *sql.DB, cfg config.Config) {
 	uploadHandler := handlers.NewUploadHandler(db, cfg)
 	pdfHandler := handlers.NewPdfHandler(db, cfg)
 	healthHandler := handlers.NewHealthHandler(db)
+	exportHandler := handlers.NewExportHandler()
 
 	// Routes
 	app.Post("/upload/init", uploadHandler.InitChunkUpload)
@@ -30,6 +31,10 @@ func Setup(app *fiber.App, db *sql.DB, cfg config.Config) {
 	app.Put("/update-pdf/:id", pdfHandler.UpdatePDF)
 	app.Post("/resummarize/:id", pdfHandler.Resummarize)
 	app.Get("/summaries/:id", pdfHandler.GetSummaries)
+
+	// Export routes (CSV & JSON)
+	app.Post("/export/csv", exportHandler.ExportCSV)
+	app.Post("/export/json", exportHandler.ExportJSON)
 }
 
 //Kita membuat handler sekali

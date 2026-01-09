@@ -2,9 +2,9 @@
 import { useState, useEffect, useMemo } from "react";
 import styles from "./PdfManager.module.css";
 
-const GO_API_BASE_URL = process.env.NEXT_PUBLIC_GO_API_BASE_URL || "http://localhost:8080";
+const GO_API_BASE_URL = process.env.NEXT_PUBLIC_GO_API_BASE_URL || "http://localhost:8080"; //ambil url klo env gd pake 8080
 
-export default function PdfManager() {
+export default function PdfManager() { //state, fungsi, logika data
   const [pdfList, setPdfList] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -15,15 +15,15 @@ export default function PdfManager() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterUploaded, setFilterUploaded] = useState("all");
-  const [sortKey, setSortKey] = useState("upload_time");
-  const [sortDir, setSortDir] = useState("desc");
+  const [sortKey, setSortKey] = useState("upload_time"); 
+  const [sortDir, setSortDir] = useState("desc"); //arah sort
   const itemsPerPage = 6;
 
-  // Fetch PDF list from Go backend
-  const fetchPdfList = async () => {
+
+  const fetchPdfList = async () => { //ambil daftar pdf ke be
     setLoading(true);
     try {
-      const response = await fetch(`${GO_API_BASE_URL}/simple-pdfs`);
+      const response = await fetch(`${GO_API_BASE_URL}/simple-pdfs`); 
       if (!response.ok) throw new Error("Failed to fetch PDF list");
       const data = await response.json();
       setPdfList(data.pdfs || []);
@@ -119,11 +119,12 @@ export default function PdfManager() {
     }
   };
 
+  //helper
   const formatFileSize = (bytes) => {
     if (bytes === 0) return "0 Bytes";
-    const k = 1024;
+    const k = 1024; //1 kb
     const sizes = ["Bytes", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    const i = Math.floor(Math.log(bytes) / Math.log(k)); //pembulatan ke bawah
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
@@ -151,45 +152,45 @@ export default function PdfManager() {
   }, []);
 
   useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, filterUploaded, sortKey, sortDir]);
+    setCurrentPage(1); //kalau user ngubah filter, trs km ad dihalaman 5 misal, nah halamannya auto ke halaman 1 lagi, kalo ttp halaman 5, ya hasilnya ksong karena hasilnta ad di halaman 1 jika hasilnya ga sampe 6
+  }, [searchQuery, filterUploaded, sortKey, sortDir]); //dependency array
 
   const filteredSortedPdfList = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
+    const q = searchQuery.trim().toLowerCase(); //buang spasi depanbelakang,biar tdk casesensitive
     const now = Date.now();
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
-    const startOfTodayMs = startOfToday.getTime();
+    const startOfTodayMs = startOfToday.getTime(); //ubah ke milidetik
 
-    const cutoffMs = (() => {
+    const cutoffMs = (() => { //fungsi langsung dijalankan
       if (filterUploaded === "today") return startOfTodayMs;
-      if (filterUploaded === "7d") return now - 7 * 24 * 60 * 60 * 1000;
+      if (filterUploaded === "7d") return now - 7 * 24 * 60 * 60 * 1000; 
       if (filterUploaded === "30d") return now - 30 * 24 * 60 * 60 * 1000;
       return null;
     })();
 
     const filtered = pdfList.filter((pdf) => {
       const name = (pdf?.filename || "").toString();
-      const original = (pdf?.original_filename || "").toString();
+      const original = (pdf?.original_filename || "").toString();//kalau pdf null ya ga error
 
       const matchesQuery = q.length === 0 || name.toLowerCase().includes(q) || original.toLowerCase().includes(q);
-      if (!matchesQuery) return false;
+      if (!matchesQuery) return false; //kalo ga cocok, buang dr tampilan pdfnya itu
 
-      if (cutoffMs !== null) {
+      if (cutoffMs !== null) { //user milih waktu
         const uploadedAt = new Date(pdf?.upload_time || 0).getTime();
-        const uploadedAtMs = Number.isFinite(uploadedAt) ? uploadedAt : 0;
-        if (uploadedAtMs < cutoffMs) return false;
+        const uploadedAtMs = Number.isFinite(uploadedAt) ? uploadedAt : 0; //validasi angka waktu
+        if (uploadedAtMs < cutoffMs) return false; 
       }
 
       return true;
     });
 
-    const dir = sortDir === "asc" ? 1 : -1;
+    const dir = sortDir === "asc" ? 1 : -1; //ascending descending 1 fungsi bs updown
     const sorted = [...filtered].sort((a, b) => {
-      if (sortKey === "filename") {
+      if (sortKey === "filename") { 
         const av = (a?.filename || "").toString();
         const bv = (b?.filename || "").toString();
-        return dir * av.localeCompare(bv);
+        return dir * av.localeCompare(bv); //aman string support bhs
       }
 
       if (sortKey === "filesize") {
@@ -198,7 +199,7 @@ export default function PdfManager() {
         return dir * (av - bv);
       }
 
-      const av = new Date(a?.upload_time || 0).getTime();
+      const av = new Date(a?.upload_time || 0).getTime(); 
       const bv = new Date(b?.upload_time || 0).getTime();
       const aTime = Number.isFinite(av) ? av : 0;
       const bTime = Number.isFinite(bv) ? bv : 0;
@@ -209,26 +210,26 @@ export default function PdfManager() {
   }, [pdfList, searchQuery, filterUploaded, sortKey, sortDir]);
 
   useEffect(() => {
-    const totalPages = Math.max(1, Math.ceil(filteredSortedPdfList.length / itemsPerPage));
-    setCurrentPage((prev) => Math.min(prev, totalPages));
+    const totalPages = Math.max(1, Math.ceil(filteredSortedPdfList.length / itemsPerPage)); //minimal satu halaman, math cell misal ada total 10 pdf, / 6, 1,66 dibulatkan jadi 2 hal, minim 1 hal biar ui ga rusak wlau 0 pdf
+    setCurrentPage((prev) => Math.min(prev, totalPages)); //kalau page skrng lebih besar turunin pake ini
   }, [filteredSortedPdfList.length]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredSortedPdfList.length / itemsPerPage));
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const paginatedPdfList = filteredSortedPdfList.slice(startIndex, endIndex);
+  const totalPages = Math.max(1, Math.ceil(filteredSortedPdfList.length / itemsPerPage)); 
+  const startIndex = (currentPage - 1) * itemsPerPage; //hitung index data yg ditampilkan
+  const endIndex = startIndex + itemsPerPage; //yaudah misal currentpage 1 ,startindex 0 + 6 (items perpage)
+  const paginatedPdfList = filteredSortedPdfList.slice(startIndex, endIndex); //ambil data sesuai hal
 
-  const handlePageChange = (page) => {
-    const next = Math.min(Math.max(1, page), totalPages);
+  const handlePageChange = (page) => { //klik tombol angka, klik next/prev
+    const next = Math.min(Math.max(1, page), totalPages); //page gaboleh keluar batas
     setCurrentPage(next);
   };
 
-  const getPageNumbers = () => {
-    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
+  const getPageNumbers = () => { //ngatur angka hal yang ditampilkan
+    if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1); //ini kalau hal sedikit
 
-    const pages = new Set([1, totalPages]);
-    for (let p = currentPage - 1; p <= currentPage + 1; p++) {
-      if (p > 1 && p < totalPages) pages.add(p);
+    const pages = new Set([1, totalPages]); //kalau hal banyak tempatkan di pages
+    for (let p = currentPage - 1; p <= currentPage + 1; p++) { //tampilkan hal sblm, skrng, sesudh
+      if (p > 1 && p < totalPages) pages.add(p); //Kalau angka halaman bukan halaman pertama dan bukan halaman terakhir, tambahkan ke pages
     }
     return Array.from(pages).sort((a, b) => a - b);
   };
@@ -260,8 +261,8 @@ export default function PdfManager() {
             <button onClick={fetchPdfList} className={styles.refreshBtn}>
               🔄 Refresh
             </button>
-          </div>
-
+          </div> 
+          
           <div className={styles.controlsRow}>
             <div className={styles.searchWrap}>
               <input
